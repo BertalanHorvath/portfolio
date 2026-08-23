@@ -17,13 +17,15 @@ python3 -m http.server 8080
 index.html          the entire site (markup, styles, scripts)
 assets/
   portrait.jpg       hero avatar
-  icon-*.svg         info-band icons
-  mockups/*.png      project mockups, keyed by project slug
+  icon-human.png      professional-interests card icons
+  icon-ai.png
+  icon-future.png
+  mockups/*.png      project case-study visuals, keyed by project slug
 ```
 
 ## Notes
 
-- Layout is a fixed 1440×960 frame scaled to fit the viewport. A fully responsive rebuild
-  (stacked hero, collapsing info band, top-bar nav on mobile) is a natural next step.
-- Project data (name, accent colour, description, case-study copy) lives in the `P` array
-  near the bottom of `index.html`.
+- Desktop-first, fixed at a 1440px design width (sidebar + content render edge-to-edge,
+  no scaling). A responsive rebuild for narrow viewports is a natural next step.
+- Project data (name, category, accent colour, description, case-study copy) lives in the
+  `P` array near the bottom of `index.html`.
