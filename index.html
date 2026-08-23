@@ -60,6 +60,11 @@ a.crow:hover{color:#fff;opacity:1}
 .abd{padding:0 26px;border-left:1px solid #2c2c31}
 a.cic:hover{border-color:#8a8f98;color:#fff;opacity:1}
 #glow{filter:blur(32px)}
+@media (prefers-reduced-motion:no-preference){
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:translateY(0)}
+}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
 .intcard{background:#1c1c21;border:1px solid #2c2c31;border-radius:18px;padding:28px 26px 26px;display:flex;flex-direction:column}
 .intcard img{height:190px;width:auto;align-self:center;margin:6px 0 20px}
 .intcard h3{font-size:16px;font-weight:600;color:#fff;margin:0 0 12px}
@@ -94,16 +99,16 @@ a.cic:hover{border-color:#8a8f98;color:#fff;opacity:1}
         <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:56px 48px 30px;box-sizing:border-box;pointer-events:none">
           <div style="display:flex;align-items:center;gap:56px;flex:1;min-height:0">
             <div style="flex:1;min-width:0;max-width:790px">
-              <div class="mono" style="display:inline-flex;align-items:center;gap:9px;border:1px solid #2f4a35;background:#16211a;border-radius:999px;padding:7px 14px;font-size:10px;letter-spacing:.18em;color:#7ed99a"><span style="width:7px;height:7px;border-radius:50%;background:#4ade80;animation:bhPulseX 2.4s infinite"></span>OPEN FOR ONSITE / REMOTE WORK</div>
-              <div style="margin-top:30px;font-size:74px;font-weight:700;line-height:1.02;letter-spacing:-.032em;color:#fff">Making complex<br>products <span style="color:#c7cbff;white-space:nowrap">make sense</span></div>
-              <div style="margin-top:26px;font-size:14px;line-height:1.85;color:#9a9aa2;max-width:480px">Product Designer with 8+ years across e-commerce, enterprise software, data-rich dashboards and public-sector services.</div>
-              <div style="display:flex;align-items:center;gap:12px;margin-top:34px">
+              <div class="reveal mono" style="transition-delay:40ms;display:inline-flex;align-items:center;gap:9px;border:1px solid #2f4a35;background:#16211a;border-radius:999px;padding:7px 14px;font-size:10px;letter-spacing:.18em;color:#7ed99a"><span style="width:7px;height:7px;border-radius:50%;background:#4ade80;animation:bhPulseX 2.4s infinite"></span>OPEN FOR ONSITE / REMOTE WORK</div>
+              <div class="reveal" style="transition-delay:130ms;margin-top:30px;font-size:74px;font-weight:700;line-height:1.02;letter-spacing:-.032em;color:#fff">Making complex<br>products <span style="color:#c7cbff;white-space:nowrap">make sense</span></div>
+              <div class="reveal" style="transition-delay:230ms;margin-top:26px;font-size:14px;line-height:1.85;color:#9a9aa2;max-width:480px">Product Designer with 8+ years across e-commerce, enterprise software, data-rich dashboards and public-sector services.</div>
+              <div class="reveal" style="transition-delay:320ms;display:flex;align-items:center;gap:12px;margin-top:34px">
                 <div class="btnw" style="pointer-events:auto" onclick="go('projects')">Explore projects &rarr;</div>
                 <a class="btng" style="pointer-events:auto" href="mailto:horvath.bertalan.andras@gmail.com">Get in touch</a>
               </div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:40px;border-top:1px solid #2c2c31;padding-top:26px;flex-shrink:0">
+          <div class="reveal" style="transition-delay:400ms;display:flex;align-items:center;justify-content:space-between;gap:40px;border-top:1px solid #2c2c31;padding-top:26px;flex-shrink:0">
             <div style="display:flex;align-items:center;gap:34px">
               <div><div style="font-size:27px;font-weight:700;color:#fff;line-height:1">8+</div><div class="mono statL">YEARS</div></div>
               <div style="width:1px;height:34px;background:#2c2c31"></div>
@@ -124,18 +129,18 @@ a.cic:hover{border-color:#8a8f98;color:#fff;opacity:1}
     <section id="pg-projects" style="display:none;flex:1;flex-direction:column">
       <div class="card" style="position:relative;flex:1;min-height:560px;overflow:hidden;display:flex;flex-direction:column;padding:24px 30px 26px">
         <div id="glow" style="position:absolute;inset:0;pointer-events:none"></div>
-        <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <div class="reveal" style="transition-delay:0ms;position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px">
           <div style="display:flex;align-items:center;gap:12px">
             <div class="arrow" onclick="step(-1)">←</div><div class="arrow" onclick="step(1)">→</div>
             <span class="mono" id="count" style="font-size:12px"></span>
           </div>
           <span id="tabs" style="display:flex;gap:8px"></span>
         </div>
-        <div style="position:relative;margin-top:18px">
+        <div class="reveal" style="transition-delay:60ms;position:relative;margin-top:18px">
           <div id="pname" style="font-size:30px;font-weight:700;color:#fff"></div>
           <div style="font-size:13px;margin-top:6px;color:#8c8c93"><span id="pcat" style="font-weight:600"></span> <span style="color:#5b5b62">/</span> <span id="pdesc"></span></div>
         </div>
-        <div id="pslot" style="position:relative;flex:1;min-height:0;margin-top:20px;border-radius:14px;background-repeat:no-repeat;background-position:center;background-size:cover"></div>
+        <div id="pslot" class="reveal" style="transition-delay:140ms;position:relative;flex:1;min-height:0;margin-top:20px;border-radius:14px;background-repeat:no-repeat;background-position:center;background-size:cover"></div>
       </div>
       <div class="about-band" id="projBand"></div>
     </section>
@@ -145,14 +150,14 @@ a.cic:hover{border-color:#8a8f98;color:#fff;opacity:1}
         <div style="font-size:24px;font-weight:600;color:#fff">Creative Suite</div>
         <div style="font-size:13px;color:#8c8c93;margin-top:6px">The tools I reach for, and where each one earns its place.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:30px">
-          <div class="tool"><b>Figma</b><p>Daily driver. UI design, prototyping, design systems and developer handoff.</p></div>
-          <div class="tool"><b>Framer</b><p>Responsive website design, interactive prototypes and production-ready publishing.</p></div>
-          <div class="tool"><b>Dovetail</b><p>Interviews, qualitative analysis, insight synthesis and research documentation.</p></div>
-          <div class="tool"><b>PostHog</b><p>Remote usability testing and quick validation loops.</p></div>
-          <div class="tool"><b>Miro</b><p>Journey mapping, service blueprints, research synthesis and stakeholder workshops.</p></div>
-          <div class="tool"><b>FigJam</b><p>Early-stage ideation, workshop exercises, user flows and collaborative mapping.</p></div>
-          <div class="tool"><b>Adobe CC</b><p>Image editing, vector graphics, motion design, visual assets and presentation refinement.</p></div>
-          <div class="tool"><b>AI workflows</b><p>Research synthesis, concept exploration, content structuring and faster design iteration.</p></div>
+          <div class="tool reveal" style="transition-delay:0ms"><b>Figma</b><p>Daily driver. UI design, prototyping, design systems and developer handoff.</p></div>
+          <div class="tool reveal" style="transition-delay:50ms"><b>Framer</b><p>Responsive website design, interactive prototypes and production-ready publishing.</p></div>
+          <div class="tool reveal" style="transition-delay:100ms"><b>Dovetail</b><p>Interviews, qualitative analysis, insight synthesis and research documentation.</p></div>
+          <div class="tool reveal" style="transition-delay:150ms"><b>PostHog</b><p>Remote usability testing and quick validation loops.</p></div>
+          <div class="tool reveal" style="transition-delay:200ms"><b>Miro</b><p>Journey mapping, service blueprints, research synthesis and stakeholder workshops.</p></div>
+          <div class="tool reveal" style="transition-delay:250ms"><b>FigJam</b><p>Early-stage ideation, workshop exercises, user flows and collaborative mapping.</p></div>
+          <div class="tool reveal" style="transition-delay:300ms"><b>Adobe CC</b><p>Image editing, vector graphics, motion design, visual assets and presentation refinement.</p></div>
+          <div class="tool reveal" style="transition-delay:350ms"><b>AI workflows</b><p>Research synthesis, concept exploration, content structuring and faster design iteration.</p></div>
         </div>
       </div>
     </section>
@@ -162,19 +167,19 @@ a.cic:hover{border-color:#8a8f98;color:#fff;opacity:1}
         <div style="font-size:24px;font-weight:600;color:#fff">Professional interests</div>
         <div style="font-size:13px;color:#8c8c93;margin-top:6px">Three areas I keep exploring beyond day-to-day product work — and bring back into the way I design.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:30px;flex:1">
-          <div class="intcard">
+          <div class="intcard reveal" style="transition-delay:0ms">
             <img src="assets/icon-human.png" alt="">
             <h3>Human behaviour</h3>
             <p>I'm interested in the mechanisms behind human judgement and behaviour: how people interpret information, form mental models and make choices with limited attention. Personality, motivation, cognitive biases and context often explain the gap between what people say, intend and actually do.</p>
             <div class="inpractice"><b>In practice</b><span>I combine interviews, usability testing and close observation to uncover these patterns, then translate them into clearer information architecture, decision points and interaction flows. Street and travel photography further sharpen my attention to behaviour, context and visual composition.</span></div>
           </div>
-          <div class="intcard">
+          <div class="intcard reveal" style="transition-delay:130ms">
             <img src="assets/icon-ai.png" alt="">
             <h3>AI &amp; Digital systems</h3>
             <p>I'm interested in AI not only as a design tool, but as a new layer within products and services — one that changes how people access information, make decisions and interact with complex systems. The central design challenge is defining where automation adds value, where human judgement should remain, and how a product communicates uncertainty, control and responsibility.</p>
             <div class="inpractice"><b>In practice</b><span>I explore AI-assisted workflows in research, synthesis, ideation and prototyping, while applying the same questions to product design: What should the system do, what should the user decide, and how can the interaction remain understandable and trustworthy?</span></div>
           </div>
-          <div class="intcard">
+          <div class="intcard reveal" style="transition-delay:260ms">
             <img src="assets/icon-future.png" alt="">
             <h3>Future concepts</h3>
             <p>I'm drawn to questions that sit beyond immediate product roadmaps: how changes in technology, behaviour and society could create new needs, interaction models and services. I look for weak signals and connections across different fields, but treat them as inputs for structured exploration rather than predictions.</p>
@@ -195,7 +200,7 @@ var P=[
 {k:'clema',n:'Clema',cat:'On-demand services',a:'#0e8574',desc:"An on-demand app connecting people with local service professionals – designed end-to-end from the client's brief into a working flow.",cs:["The client had a clear vision for a service-matching app but needed it turned into a real, end-to-end user flow – from finding a professional to creating and tracking a task.","Owned the UI design, working from the client's specific concept. Designed the full journey – registration, search, professional profiles, task creation and tracking – and presented the screens along the way.","Designing the flow surfaced gaps the brief didn't anticipate – steps that didn't connect once mapped out. Reworked those parts so the journey held together as a usable path, not just a set of screens.","Delivered as a complete, mapped-out flow."]}];
 var cur=0;
 function glowFor(c,i){var L=['radial-gradient(520px 320px at 30% 28%,'+c+'59,transparent 70%),radial-gradient(360px 300px at 84% 74%,'+c+'33,transparent 72%)','radial-gradient(440px 440px at 16% 20%,'+c+'4d,transparent 68%),radial-gradient(500px 400px at 90% 84%,'+c+'40,transparent 72%)','radial-gradient(700px 480px at 50% 46%,'+c+'55,transparent 72%)','radial-gradient(1000px 320px at 50% 104%,'+c+'55,transparent 72%),radial-gradient(320px 260px at 82% 14%,'+c+'40,transparent 72%)','radial-gradient(440px 640px at 92% 50%,'+c+'55,transparent 70%),radial-gradient(300px 300px at 26% 38%,'+c+'2e,transparent 74%)'];return L[i%5]}
-function go(p){document.querySelectorAll('#nav div').forEach(function(n){n.classList.toggle('on',n.dataset.p===p)});['home','projects','creative','interests'].forEach(function(k){var el=document.getElementById('pg-'+k);el.style.display=k===p?'flex':'none'})}
+function go(p){document.querySelectorAll('#nav div').forEach(function(n){n.classList.toggle('on',n.dataset.p===p)});['home','projects','creative','interests'].forEach(function(k){var el=document.getElementById('pg-'+k);el.style.display=k===p?'flex':'none'});replay(document.getElementById('pg-'+p))}
 document.querySelectorAll('#nav div').forEach(function(n){n.onclick=function(){go(n.dataset.p)}});
 function tabs(){var t=document.getElementById('tabs');t.innerHTML='';P.forEach(function(p,i){var d=document.createElement('div');var on=i===cur;d.className='chip'+(on?' on':'');d.style.borderColor=on?p.a:'#33333a';d.style.background=on?p.a+'26':'transparent';d.innerHTML='<i style="background:'+p.a+'"></i>'+p.n;d.onclick=function(){cur=i;proj()};t.appendChild(d)})}
 function proj(){var p=P[cur];tabs();
@@ -204,10 +209,13 @@ function proj(){var p=P[cur];tabs();
  pname.textContent=p.n;pcat.textContent=p.cat;pcat.style.color=p.a;pdesc.textContent=p.desc;
  loadProj(p);
  var cs=p.cs||[],lbl=['THE PROBLEM','MY ROLE','KEY DECISION','OUTCOME / NEXT'];
- document.getElementById('projBand').innerHTML=lbl.map(function(t,i){var pad=i===0?'padding:0 26px 0 4px':(i===3?'padding:0 4px 0 26px;border-left:1px solid #2c2c31':'');return '<div'+(i>0&&i<3?' class="abd"':'')+' style="'+pad+'"><b class="ab">'+t+'</b><span class="as">'+(cs[i]||'')+'</span></div>'}).join('')}
+ document.getElementById('projBand').innerHTML=lbl.map(function(t,i){var pad=i===0?'padding:0 26px 0 4px':(i===3?'padding:0 4px 0 26px;border-left:1px solid #2c2c31':'');var cls='reveal'+(i>0&&i<3?' abd':'');return '<div class="'+cls+'" style="transition-delay:'+(220+i*90)+'ms;'+pad+'"><b class="ab">'+t+'</b><span class="as">'+(cs[i]||'')+'</span></div>'}).join('');
+ replay(document.getElementById('pg-projects'))}
 function loadProj(p){var el=document.getElementById('pslot');el.style.backgroundImage="url('assets/mockups/"+p.k+".png')"}
 function step(d){cur=(cur+d+5)%5;proj()}
+function replay(scope){if(!scope)return;var els=scope.querySelectorAll('.reveal');els.forEach(function(el){el.classList.remove('in')});void scope.offsetWidth;requestAnimationFrame(function(){requestAnimationFrame(function(){els.forEach(function(el){el.classList.add('in')})})})}
 proj();
+replay(document.getElementById('pg-home'));
 </script>
 <script>
 (function(){
