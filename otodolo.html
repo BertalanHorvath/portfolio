@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ötödölő — Bertalan Horváth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:#0f0f10;font-family:Poppins,sans-serif;color:#e8e8ea;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:26px 18px}
+a{color:inherit;text-decoration:none}
+.mono{font-family:'Space Mono',monospace}
+.wrap{width:100%;max-width:920px}
+.back{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#a3a3aa;margin-bottom:18px}
+.back:hover{color:#fff}
+.card{border-radius:22px;background:linear-gradient(180deg,#242428,#1c1c1f);border:1px solid #2c2c31;overflow:hidden}
+.head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:26px 28px 18px}
+.head h1{font-size:24px;font-weight:700;color:#fff;margin:0}
+.head p{font-size:12.5px;color:#8c8c93;margin:6px 0 0}
+.hud{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.turn{display:flex;align-items:center;gap:9px;border:1px solid #33333a;border-radius:999px;padding:8px 16px;font-size:12.5px;color:#c9c9ce}
+.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;transition:background .15s}
+.btng{font-size:12.5px;color:#a2a2a8;border:1px solid #33333a;border-radius:999px;padding:10px 18px;cursor:pointer;transition:all .15s;background:none;font-family:inherit}
+.btng:hover{border-color:#8a8f98;color:#fff}
+.stage{position:relative;margin:0 28px 28px;border-radius:16px;overflow:hidden;border:1px solid #2c2c31;background:#151517}
+canvas{display:block;width:100%;height:560px;touch-action:none;cursor:crosshair}
+.banner{position:absolute;left:50%;top:22px;transform:translateX(-50%) translateY(-14px);opacity:0;pointer-events:none;transition:all .25s cubic-bezier(.16,1,.3,1);background:#1c1c21;border:1px solid #34343d;border-radius:999px;padding:11px 22px;font-size:13px;font-weight:600;color:#fff;box-shadow:0 14px 34px rgba(0,0,0,.4);white-space:nowrap}
+.banner.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.hint{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:0 28px 28px;font-size:11px;color:#6d6d74;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">&larr; Vissza a portfólióra</a>
+  <div class="card">
+    <div class="head">
+      <div>
+        <h1>Ötödölő</h1>
+        <p>Végtelen négyzetrács, öt egymás melletti jel nyer. Kattints a lerakáshoz, húzd az egeret / ujjad a mozgatáshoz.</p>
+      </div>
+      <div class="hud">
+        <div class="turn"><span class="dot" id="turnDot"></span><span id="turnLabel">X következik</span></div>
+        <button class="btng" id="resetBtn">Új játék</button>
+      </div>
+    </div>
+    <div class="stage">
+      <canvas id="board"></canvas>
+      <div class="banner" id="banner"></div>
+    </div>
+    <div class="hint mono">
+      <span>SCROLL = ZOOM</span>
+      <span>DRAG = PAN</span>
+      <span>CLICK = LERAKÁS</span>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var cv=document.getElementById('board'),ctx=cv.getContext('2d');
+  var DPR=Math.min(window.devicePixelRatio||1,2);
+  var W=0,H=0,cell=42,offX=0,offY=0;
+  var PX={color:'#8f97ff',glow:'rgba(143,151,255,.5)'};
+  var PO={color:'#7ed99a',glow:'rgba(126,217,154,.5)'};
+  var stones=new Map(); // "x,y" -> 'X' | 'O'
+  var turn='X',over=false,winCells=null;
+
+  function key(x,y){return x+','+y}
+
+  function fit(){
+    var r=cv.getBoundingClientRect();
+    W=Math.max(280,r.width);H=Math.max(280,r.height);
+    cv.width=W*DPR;cv.height=H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    draw();
+  }
+  new ResizeObserver(fit).observe(cv);
+
+  function toGrid(px,py){
+    return {x:Math.round((px-offX)/cell),y:Math.round((py-offY)/cell)};
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#151517';ctx.fillRect(0,0,W,H);
+
+    var x0=Math.floor(-offX/cell)-1,x1=Math.ceil((W-offX)/cell)+1;
+    var y0=Math.floor(-offY/cell)-1,y1=Math.ceil((H-offY)/cell)+1;
+
+    ctx.strokeStyle='#232328';ctx.lineWidth=1;
+    ctx.beginPath();
+    for(var gx=x0;gx<=x1;gx++){var sx=Math.round(gx*cell+offX)+.5;ctx.moveTo(sx,0);ctx.lineTo(sx,H);}
+    for(var gy=y0;gy<=y1;gy++){var sy=Math.round(gy*cell+offY)+.5;ctx.moveTo(0,sy);ctx.lineTo(W,sy);}
+    ctx.stroke();
+
+    // origin cross for orientation
+    ctx.strokeStyle='#2f2f36';ctx.lineWidth=1.4;
+    var ox=Math.round(0*cell+offX)+.5,oy=Math.round(0*cell+offY)+.5;
+    ctx.beginPath();ctx.moveTo(ox-6,oy);ctx.lineTo(ox+6,oy);ctx.moveTo(ox,oy-6);ctx.lineTo(ox,oy+6);ctx.stroke();
+
+    var r=Math.max(6,cell*.34);
+    stones.forEach(function(p,k){
+      var parts=k.split(','),gx=+parts[0],gy=+parts[1];
+      var sx=gx*cell+offX,sy=gy*cell+offY;
+      if(sx<-cell||sx>W+cell||sy<-cell||sy>H+cell)return;
+      var pl=p==='X'?PX:PO;
+      var won=winCells&&winCells.indexOf(k)!==-1;
+      if(won){
+        ctx.beginPath();ctx.arc(sx,sy,r+7,0,6.2832);ctx.fillStyle=pl.glow;ctx.fill();
+      }
+      ctx.beginPath();ctx.arc(sx,sy,r,0,6.2832);
+      ctx.fillStyle=won?'#fff':pl.color;
+      ctx.fill();
+      if(!won){ctx.lineWidth=1.5;ctx.strokeStyle=pl.glow;ctx.stroke();}
+    });
+
+    if(hover&&!over){
+      var hk=key(hover.x,hover.y);
+      if(!stones.has(hk)){
+        var hx=hover.x*cell+offX,hy=hover.y*cell+offY;
+        ctx.beginPath();ctx.arc(hx,hy,r,0,6.2832);
+        ctx.strokeStyle=(turn==='X'?PX.color:PO.color)+'88';ctx.lineWidth=1.6;ctx.stroke();
+      }
+    }
+  }
+
+  var DIRS=[[1,0],[0,1],[1,1],[1,-1]];
+  function checkWin(x,y,p){
+    for(var d=0;d<DIRS.length;d++){
+      var dx=DIRS[d][0],dy=DIRS[d][1];
+      var cells=[key(x,y)];
+      var nx=x+dx,ny=y+dy;
+      while(stones.get(key(nx,ny))===p){cells.push(key(nx,ny));nx+=dx;ny+=dy;}
+      nx=x-dx;ny=y-dy;
+      while(stones.get(key(nx,ny))===p){cells.push(key(nx,ny));nx-=dx;ny-=dy;}
+      if(cells.length>=5)return cells;
+    }
+    return null;
+  }
+
+  function setTurnUI(){
+    var dot=document.getElementById('turnDot'),lbl=document.getElementById('turnLabel');
+    dot.style.background=turn==='X'?PX.color:PO.color;
+    lbl.textContent=(turn==='X'?'X':'O')+' következik';
+  }
+  function showBanner(text){
+    var b=document.getElementById('banner');
+    b.textContent=text;b.classList.add('on');
+  }
+  function hideBanner(){document.getElementById('banner').classList.remove('on');}
+
+  function place(x,y){
+    if(over)return;
+    var k=key(x,y);
+    if(stones.has(k))return;
+    stones.set(k,turn);
+    var win=checkWin(x,y,turn);
+    if(win){
+      over=true;winCells=win;
+      showBanner((turn==='X'?'X':'O')+' nyert! — öt egymás mellett');
+    }else{
+      turn=turn==='X'?'O':'X';
+      setTurnUI();
+    }
+    draw();
+  }
+
+  function reset(){
+    stones.clear();turn='X';over=false;winCells=null;
+    offX=W/2;offY=H/2;
+    setTurnUI();hideBanner();draw();
+  }
+
+  // pointer interaction: distinguish click (place) vs drag (pan)
+  var dragging=false,downX=0,downY=0,startOffX=0,startOffY=0,moved=false,hover=null;
+  cv.addEventListener('pointerdown',function(e){
+    cv.setPointerCapture(e.pointerId);
+    var r=cv.getBoundingClientRect();
+    downX=e.clientX-r.left;downY=e.clientY-r.top;
+    startOffX=offX;startOffY=offY;
+    dragging=true;moved=false;
+  });
+  cv.addEventListener('pointermove',function(e){
+    var r=cv.getBoundingClientRect();
+    var px=e.clientX-r.left,py=e.clientY-r.top;
+    if(dragging){
+      var dx=px-downX,dy=py-downY;
+      if(Math.abs(dx)>4||Math.abs(dy)>4)moved=true;
+      if(moved){offX=startOffX+dx;offY=startOffY+dy;}
+    }
+    hover=toGrid(px,py);
+    draw();
+  });
+  cv.addEventListener('pointerup',function(e){
+    if(dragging&&!moved){
+      var r=cv.getBoundingClientRect();
+      var g=toGrid(e.clientX-r.left,e.clientY-r.top);
+      place(g.x,g.y);
+    }
+    dragging=false;moved=false;
+  });
+  cv.addEventListener('pointerleave',function(){hover=null;draw();});
+  cv.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var r=cv.getBoundingClientRect();
+    var mx=e.clientX-r.left,my=e.clientY-r.top;
+    var wx=(mx-offX)/cell,wy=(my-offY)/cell;
+    var factor=e.deltaY<0?1.1:1/1.1;
+    cell=Math.max(18,Math.min(72,cell*factor));
+    offX=mx-wx*cell;offY=my-wy*cell;
+    draw();
+  },{passive:false});
+
+  document.getElementById('resetBtn').addEventListener('click',reset);
+
+  fit();
+  offX=W/2;offY=H/2;
+  setTurnUI();
+  draw();
+})();
+</script>
+</body>
+</html>
