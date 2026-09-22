@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Newpet – Örökbefogadás ellenőrzött menhelyekről</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+:root{
+  --ink:#1c1c1c;--ink-2:#3d4a4f;--muted:#5e6b70;--placeholder:#6b7779;
+  --primary:#3b5bdb;--primary-soft:#eef2fe;
+  --line:#e6ecee;--line-2:#e3eaec;--line-3:#d2dde0;--field:#bdcace;
+  --surface:#f3f7f8;--tag:#f0f4f5;
+  --font:'proxima-nova','Proxima Nova',Figtree,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+p,h1,h2,h3{margin:0}
+.wrap{max-width:1440px;margin:0 auto;padding:0 80px}
+
+/* type scale (Newpet v2 text styles) */
+.t-h2{font-size:40px;font-weight:700;line-height:1.2;letter-spacing:-.4px}
+.t-h3{font-size:24px;font-weight:700;line-height:1.3;letter-spacing:-.12px}
+.t-h4{font-size:20px;font-weight:700;line-height:1.3}
+.t-body-l{font-size:18px;line-height:1.55}
+.t-body{font-size:16px;line-height:1.5}
+.t-body-s{font-size:14px;line-height:1.45}
+.t-label{font-size:14px;font-weight:600;line-height:1.4}
+.t-caption{font-size:12px;font-weight:600;line-height:1.3}
+.t-nav{font-size:16px;font-weight:600;line-height:1.2}
+.lead{color:var(--muted)}
+
+/* buttons & links */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:8px;font-size:16px;font-weight:700;line-height:1.2;white-space:nowrap;transition:background .15s,box-shadow .15s,transform .15s}
+.btn .fas{width:20px;text-align:center}
+.btn-m{padding:12px 20px}
+.btn-l{padding:18px 28px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#2f4bc4;box-shadow:0 8px 20px rgba(59,91,219,.25)}
+.btn-secondary{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
+.btn-secondary:hover{background:var(--surface)}
+.link{display:inline-flex;align-items:center;gap:8px;color:var(--primary);font-size:16px;font-weight:700;line-height:1.2;white-space:nowrap}
+.link .fas{font-size:14px;width:18px;text-align:center;transition:transform .15s}
+.link:hover .fa-arrow-right{transform:translateX(3px)}
+.link:hover span{text-decoration:underline}
+.pill-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 10px;border-radius:999px;background:var(--primary-soft);color:var(--primary)}
+.pill-badge .fas{width:18px;text-align:center}
+.section-head{display:flex;flex-direction:column;gap:12px}
+
+/* header */
+.header{height:80px;border-bottom:1px solid var(--line);background:#fff}
+.header .wrap{height:100%;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:56px}
+.logo{display:flex;align-items:center;height:24px}
+.logo img{display:block}
+.logo .logo-paw{width:21.48px;height:23.87px}
+.logo .logo-word{width:99.93px;height:16.94px;margin-left:-1.56px}
+.logo-fallback{display:none;align-items:center;gap:6px;font-weight:800;font-size:20px;letter-spacing:.06em}
+.logo.noimg img{display:none}.logo.noimg .logo-fallback{display:inline-flex}
+.nav{display:flex;gap:32px}
+.nav a:hover,.actions a:hover{color:var(--primary)}
+.actions{display:flex;align-items:center;gap:24px}
+.fav{display:flex;align-items:center;gap:8px}
+.fav .far{font-size:18px;width:23px;text-align:center}
+.vdivider{width:1px;height:24px;background:var(--line-3)}
+
+/* hero */
+.hero{position:relative;height:820px;overflow:hidden;background:#fff}
+.hero-photo{position:absolute;left:623px;top:13px;width:1370px;height:807px;clip-path:polygon(467px 0,100% 0,100% 100%,354px 100%,155px 500px)}
+.hero-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(205deg,rgba(255,255,255,0) 45%,rgba(255,255,255,.55) 100%)}
+.hero .wrap{position:relative;padding-top:82px}
+.hero-content{width:640px;display:flex;flex-direction:column;gap:28px;align-items:flex-start}
+.title-block{display:flex;flex-direction:column;gap:16px}
+.display{font-size:64px;font-weight:800;line-height:1.08;letter-spacing:-.96px}
+.hl{position:relative;z-index:0;white-space:nowrap}
+.hl::before{content:"";position:absolute;z-index:-1;left:0;right:0;top:47px;height:12px;border-radius:2px;background:linear-gradient(90deg,#60d4e3,#4f74f9)}
+.hero .lead{width:600px;color:var(--ink-2)}
+
+.search-card{width:640px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px;box-shadow:0 12px 20px rgba(28,43,51,.1)}
+.field{display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:0 18px 0 14px;min-height:28px;border:1px solid var(--field);border-radius:999px;background:#fff;font-size:16px;font-weight:600;line-height:1.2;transition:border-color .15s,background .15s}
+.chip:hover{border-color:var(--primary)}
+.chip img{width:30px;height:26px;display:block}
+.chip .fa-check{display:none;color:var(--primary);font-size:14px;width:18px;text-align:center}
+.chip[aria-pressed="true"]{background:var(--primary-soft);border:2px solid var(--primary);padding:0 17px 0 13px}
+.chip[aria-pressed="true"] .fa-check{display:inline-block}
+.loc-row{display:flex;gap:12px}
+.input{flex:1;min-width:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;border:1px solid var(--field);border-radius:8px;background:#fff}
+.input:focus-within,.select:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.input .fa-map-marker-alt{color:var(--placeholder);font-size:16px;width:20px;text-align:center}
+.input input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:16px;line-height:1.5;color:var(--ink);background:none}
+.input input::placeholder{color:var(--placeholder)}
+.btn-loc{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:6px;background:var(--primary-soft);color:var(--primary)}
+.btn-loc:hover{background:#e0e7fd}
+.btn-loc .fas{font-size:12px;width:15px;text-align:center}
+.select{position:relative;width:172px;height:52px;border:1px solid var(--field);border-radius:8px;background:#fff}
+.select select{appearance:none;-webkit-appearance:none;width:100%;height:100%;border:0;outline:0;background:none;padding:0 40px 0 16px;font:inherit;font-size:16px;line-height:1.5;color:var(--ink);cursor:pointer}
+.select .fas{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:12px;width:15px;text-align:center;pointer-events:none}
+.card-actions{display:flex;align-items:center;justify-content:space-between}
+.card-actions .link .fas{font-size:14px}
+.popular{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.popular>span{color:var(--muted)}
+.popular a{padding:6px 12px;border-radius:999px;background:var(--surface);color:var(--ink-2)}
+.popular a:hover{background:var(--primary-soft);color:var(--primary)}
+
+/* friss állatok */
+.section{padding:96px 0}
+.section.alt{background:var(--surface)}
+.fresh .wrap{display:flex;flex-direction:column;gap:40px}
+.heading-row{display:flex;align-items:flex-end;justify-content:space-between}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.animal{background:#fff;border:1px solid var(--line-2);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:425px;transition:box-shadow .2s,transform .2s}
+.animal:hover{box-shadow:0 12px 24px rgba(28,43,51,.08);transform:translateY(-2px)}
+.photo{position:relative;height:232px;background:#eef3f4;overflow:hidden}
+.photo img{position:absolute;max-width:none}
+.badge{position:absolute;left:12px;top:12px;padding:4px 10px;border-radius:999px;background:#fcebdd;color:#8a4a12}
+.save{position:absolute;right:10px;top:12px;width:40px;height:40px;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,.12))}
+.save i{font-size:18px;width:23px;text-align:center}
+.save[aria-pressed="true"] i{color:#e0445b;font-weight:900}
+.info{padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px}
+.info .meta{color:var(--muted)}
+.info .heading{display:flex;flex-direction:column;gap:2px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{padding:4px 8px;border-radius:6px;background:var(--tag);color:var(--ink-2)}
+.hdivider{height:1px;background:var(--line)}
+.card-footer{display:flex;flex-direction:column;gap:6px}
+.card-footer div{display:flex;align-items:center;gap:6px}
+.card-footer i{font-size:12px;width:15px;text-align:center}
+.card-footer .fa-map-marker-alt{color:var(--muted)}
+.card-footer .fa-shield-alt{color:var(--primary)}
+.card-footer .loc{color:var(--ink-2)}
+.more-row{display:flex;justify-content:center}
+
+/* így működik */
+.how .wrap{display:flex;flex-direction:column;gap:48px}
+.how .section-head{align-items:center;text-align:center}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.step{background:#fff;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px;min-height:255px}
+.step-head{display:flex;align-items:center;gap:12px;color:var(--primary)}
+.step-icon{width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e1f6f9,#e6ecfe)}
+.step-icon i{font-size:22px;width:28px;text-align:center}
+.step p{color:var(--ink-2)}
+.cta-row{display:flex;align-items:center;justify-content:center;gap:32px}
+
+/* miért a newpet */
+.why .wrap{display:flex;align-items:center;gap:80px}
+.arguments{width:560px;flex-shrink:0;display:flex;flex-direction:column;gap:32px}
+.features{display:flex;flex-direction:column;gap:24px}
+.feature{display:flex;gap:16px;align-items:flex-start}
+.feature-icon{width:48px;height:48px;flex-shrink:0;border-radius:12px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center}
+.feature-icon i{font-size:20px;width:25px;text-align:center}
+.feature div{display:flex;flex-direction:column;gap:4px}
+.feature p{color:var(--muted)}
+.proof{flex:1;min-width:0;border-radius:20px;padding:40px;display:flex;flex-direction:column;gap:32px;background:linear-gradient(147.8deg,#e9f8fa,#edf1fe)}
+.stats{display:flex;justify-content:space-between}
+.stat{display:flex;flex-direction:column;gap:4px;white-space:nowrap}
+.stat b{font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-.4px}
+.stat span{color:var(--muted)}
+.proof .hdivider{background:var(--line-3)}
+.testimonial{display:flex;flex-direction:column;gap:16px}
+.testimonial .fa-quote-left{color:var(--primary);font-size:24px;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
+.author{display:flex;align-items:center;gap:12px}
+.avatar{width:44px;height:44px;border-radius:999px;background:#fff;color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+.author div{display:flex;flex-direction:column;gap:2px}
+
+/* gyik */
+.faq .wrap{display:flex;gap:80px;align-items:flex-start}
+.faq-intro{width:400px;flex-shrink:0;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+.faq-list{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.faq-item{background:#fff;border:1px solid var(--line);border-radius:12px}
+.faq-q{width:100%;display:flex;align-items:center;gap:16px;padding:20px 24px;text-align:left}
+.faq-q>span:first-child{flex:1}
+.toggle{width:32px;height:32px;flex-shrink:0;border-radius:999px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center}
+.toggle i{font-size:14px;width:18px;text-align:center}
+.faq-a{padding:0 24px 20px;margin-top:-8px;color:var(--ink-2)}
+.faq-item:not(.open) .faq-a{display:none}
+.faq-q:hover .toggle{background:#e0e7fd}
+
+/* menhelyeknek */
+.shelters{padding:80px 0}
+.shelter-card{border-radius:20px;padding:48px 56px;display:flex;align-items:center;justify-content:space-between;gap:40px;background:linear-gradient(147.8deg,#e9f8fa,#edf1fe)}
+.shelter-text{width:640px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.shelter-text .t-body-l{color:var(--ink-2)}
+.shelter-actions{display:flex;align-items:center;gap:16px}
+
+/* footer */
+.footer{border-top:1px solid var(--line);padding:64px 0 32px}
+.footer-top{display:flex;justify-content:space-between}
+.footer-brand{width:320px;display:flex;flex-direction:column;gap:20px}
+.footer-brand .t-body-s{color:var(--muted)}
+.social{display:flex;gap:12px}
+.social a{width:40px;height:40px;border-radius:999px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.social a:hover{background:var(--primary-soft);color:var(--primary)}
+.social i{font-size:18px;width:20px;text-align:center}
+.footer-cols{display:flex;gap:80px}
+.footer-col{display:flex;flex-direction:column;gap:12px}
+.footer-col a{color:var(--muted)}
+.footer-col a:hover,.legal a:hover{color:var(--primary)}
+.footer hr{border:0;height:1px;background:var(--line);margin:48px 0}
+.footer-bottom{display:flex;justify-content:space-between;color:var(--muted)}
+.legal{display:flex;gap:24px}
+
+/* narrower viewports */
+@media (max-width:1200px){
+  .wrap{padding:0 40px}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .hero-photo{left:auto;right:-400px;opacity:.35}
+  .why .wrap,.faq .wrap{flex-direction:column;align-items:stretch}
+  .arguments,.faq-intro{width:auto}
+  .shelter-card{flex-direction:column;align-items:flex-start}
+  .shelter-text{width:auto}
+}
+@media (max-width:760px){
+  .wrap{padding:0 16px}
+  .nav,.actions .fav,.actions .vdivider,.actions>a.t-nav{display:none}
+  .hero{height:auto;padding-bottom:64px}
+  .hero-photo{display:none}
+  .hero .wrap{padding-top:48px}
+  .hero-content,.search-card,.hero .lead{width:100%}
+  .display{font-size:44px}
+  .hl::before{top:32px;height:9px}
+  .loc-row,.card-actions,.heading-row,.cta-row,.stats,.footer-top,.footer-cols,.footer-bottom,.shelter-actions{flex-direction:column;align-items:flex-start;gap:16px}
+  .cards,.steps{grid-template-columns:1fr}
+  .select{width:100%}
+  .section{padding:64px 0}
+  .t-h2{font-size:32px}
+  .proof,.shelter-card{padding:28px 24px}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="wrap">
+    <div class="brand">
+      <a class="logo" href="#" aria-label="Newpet főoldal">
+        <img class="logo-paw" src="assets/logo-paw.svg" alt="" onerror="this.parentNode.classList.add('noimg')">
+        <img class="logo-word" src="assets/logo-newpet.svg" alt="Newpet" onerror="this.parentNode.classList.add('noimg')">
+        <span class="logo-fallback"><i class="fas fa-paw"></i>NEWPET</span>
+      </a>
+      <nav class="nav t-nav">
+        <a href="#allatok">Állatok</a>
+        <a href="#">Menhelyek</a>
+        <a href="#igy-mukodik">Így működik</a>
+        <a href="#menhelyeknek">Menhelyeknek</a>
+      </nav>
+    </div>
+    <div class="actions">
+      <a class="fav t-nav" href="#"><i class="far fa-heart"></i>Kedvencek</a>
+      <span class="vdivider"></span>
+      <a class="t-nav" href="#">Bejelentkezés</a>
+      <a class="btn btn-m btn-secondary" href="#">Regisztráció</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-photo" aria-hidden="true">
+      <img src="https://images.unsplash.com/photo-1450778869180-41d0601e046e?auto=format&fit=crop&w=2000&q=80" alt="">
+    </div>
+    <div class="wrap">
+      <div class="hero-content">
+        <span class="pill-badge t-label"><i class="fas fa-shield-alt"></i>Csak ellenőrzött magyar menhelyek</span>
+        <div class="title-block">
+          <h1 class="display">Új <span class="hl">kedvenced</span><br>már vár rád</h1>
+          <p class="lead t-body-l">Böngéssz ellenőrzött magyar menhelyek örökbefogadható állatai között, és vedd fel velük a kapcsolatot közvetlenül az oldalon.</p>
+        </div>
+
+        <form class="search-card" id="search" onsubmit="event.preventDefault()">
+          <div class="field">
+            <span class="t-label">Milyen állatot keresel?</span>
+            <div class="chips" role="group" aria-label="Állatfaj">
+              <button type="button" class="chip" data-label="Mutasd a 312 kutyát" aria-pressed="true"><img src="assets/pet-dog.svg" alt="" onerror="this.remove()">Kutya<i class="fas fa-check"></i></button>
+              <button type="button" class="chip" data-label="Mutasd a 486 macskát" aria-pressed="false"><img src="assets/pet-cat.svg" alt="" onerror="this.remove()">Macska<i class="fas fa-check"></i></button>
+              <button type="button" class="chip" data-label="Mutasd a 41 nyulat" aria-pressed="false"><img src="assets/pet-rabbit.svg" alt="" onerror="this.remove()">Nyúl<i class="fas fa-check"></i></button>
+              <button type="button" class="chip" data-label="Mutasd a 23 állatot" aria-pressed="false">Egyéb<i class="fas fa-check"></i></button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="t-label" for="place">Hol keresel?</label>
+            <div class="loc-row">
+              <div class="input">
+                <i class="fas fa-map-marker-alt"></i>
+                <input id="place" type="text" placeholder="Település vagy irányítószám" autocomplete="address-level2">
+                <button type="button" class="btn-loc t-label" id="locate"><i class="fas fa-location-arrow"></i>Helyzetem</button>
+              </div>
+              <div class="select">
+                <select aria-label="Távolság">
+                  <option>10 km-en belül</option>
+                  <option selected>30 km-en belül</option>
+                  <option>50 km-en belül</option>
+                  <option>100 km-en belül</option>
+                  <option>Bárhol</option>
+                </select>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button type="submit" class="btn btn-l btn-primary"><i class="fas fa-search"></i><span id="search-label">Mutasd a 312 kutyát</span></button>
+            <a class="link" href="#"><i class="fas fa-sliders-h"></i><span>Részletes szűrés</span></a>
+          </div>
+        </form>
+
+        <div class="popular t-label">
+          <span>Népszerű:</span>
+          <a href="#">Kölyökkutyák</a>
+          <a href="#">Kistestű kutyák</a>
+          <a href="#">Cicák Budapesten</a>
+          <a href="#">Idősebb kedvencek</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section fresh" id="allatok">
+    <div class="wrap">
+      <div class="heading-row">
+        <div class="section-head">
+          <h2 class="t-h2">Ők most keresnek otthont</h2>
+          <p class="lead t-body-l">Az elmúlt napokban felkerült állatok a közeledben – ismerd meg őket!</p>
+        </div>
+        <a class="link" href="#"><span>Az összes állat</span><i class="fas fa-arrow-right"></i></a>
+      </div>
+
+      <div class="cards">
+        <article class="animal">
+          <div class="photo" style="background:#f3eadf">
+            <span class="badge t-caption">Új</span>
+            <button class="save" aria-pressed="false" aria-label="Mázli mentése a kedvencek közé"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="info">
+            <div class="heading"><h3 class="t-h4">Mázli</h3><p class="meta t-body-s">Szuka · 4 hónapos · Golden keverék</p></div>
+            <div class="tags t-caption"><span>Kölyök</span><span>Oltott</span><span>Chipes</span></div>
+            <div class="hdivider"></div>
+            <div class="card-footer">
+              <div><i class="fas fa-map-marker-alt"></i><span class="loc t-body-s">Érd · 18 km</span></div>
+              <div><i class="fas fa-shield-alt"></i><span class="t-label">Farkcsóválók Otthona</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="animal">
+          <div class="photo" style="background:#f5ece3">
+            <span class="badge t-caption">Új</span>
+            <button class="save" aria-pressed="false" aria-label="Cirmi mentése a kedvencek közé"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="info">
+            <div class="heading"><h3 class="t-h4">Cirmi</h3><p class="meta t-body-s">Kandúr · 3 éves · Európai rövidszőrű</p></div>
+            <div class="tags t-caption"><span>Ivartalanított</span><span>Lakásban tartható</span></div>
+            <div class="hdivider"></div>
+            <div class="card-footer">
+              <div><i class="fas fa-map-marker-alt"></i><span class="loc t-body-s">Budapest, XIII. ker. · 6 km</span></div>
+              <div><i class="fas fa-shield-alt"></i><span class="t-label">Cicakuckó Egyesület</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="animal">
+          <div class="photo">
+            <img src="assets/animal-photo.png" alt="Luna" style="width:260%;height:343.49%;left:-100.8%;top:-32.44%" onerror="this.remove()">
+            <button class="save" aria-pressed="false" aria-label="Luna mentése a kedvencek közé"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="info">
+            <div class="heading"><h3 class="t-h4">Luna</h3><p class="meta t-body-s">Szuka · 3 éves · Husky keverék</p></div>
+            <div class="tags t-caption"><span>Aktív</span><span>Oltott</span><span>Chipes</span></div>
+            <div class="hdivider"></div>
+            <div class="card-footer">
+              <div><i class="fas fa-map-marker-alt"></i><span class="loc t-body-s">Gödöllő · 27 km</span></div>
+              <div><i class="fas fa-shield-alt"></i><span class="t-label">Mancsbarát Menhely</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="animal">
+          <div class="photo">
+            <img src="assets/animal-photo.png" alt="Morzsa" style="width:226.84%;height:220%;left:-40.74%;top:-77.6%" onerror="this.remove()">
+            <button class="save" aria-pressed="false" aria-label="Morzsa mentése a kedvencek közé"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="info">
+            <div class="heading"><h3 class="t-h4">Morzsa</h3><p class="meta t-body-s">Nőstény · 2 éves · Házimacska</p></div>
+            <div class="tags t-caption"><span>Nyugodt</span><span>Ivartalanított</span></div>
+            <div class="hdivider"></div>
+            <div class="card-footer">
+              <div><i class="fas fa-map-marker-alt"></i><span class="loc t-body-s">Vác · 34 km</span></div>
+              <div><i class="fas fa-shield-alt"></i><span class="t-label">Négy Mancs Alapítvány</span></div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="more-row"><a class="btn btn-l btn-secondary" href="#">Mutasd mind az 1 250 állatot</a></div>
+    </div>
+  </section>
+
+  <section class="section alt how" id="igy-mukodik">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 class="t-h2">Így működik az örökbefogadás</h2>
+        <p class="lead t-body-l">Három egyszerű lépés – a menhely munkatársai végig segítenek.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-head"><span class="step-icon"><i class="fas fa-search"></i></span><span class="t-label">1. lépés</span></div>
+          <h3 class="t-h3">Keresd meg</h3>
+          <p class="t-body">Szűrj fajra, korra, méretre és távolságra. A szimpatikus állatokat elmentheted a Kedvencek közé, hogy később is megtaláld őket.</p>
+        </div>
+        <div class="step">
+          <div class="step-head"><span class="step-icon"><i class="fas fa-comments"></i></span><span class="t-label">2. lépés</span></div>
+          <h3 class="t-h3">Ismerkedjetek meg</h3>
+          <p class="t-body">Írj a menhelynek közvetlenül az oldalon, kérdezz bátran, és beszéljetek meg egy személyes látogatást.</p>
+        </div>
+        <div class="step">
+          <div class="step-head"><span class="step-icon"><i class="fas fa-home"></i></span><span class="t-label">3. lépés</span></div>
+          <h3 class="t-h3">Vidd haza</h3>
+          <p class="t-body">Ha mindenki készen áll, aláírjátok az örökbefogadási szerződést, és új családtagod hazaköltözhet.</p>
+        </div>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-l btn-primary" href="#search"><i class="fas fa-search"></i>Kezdd a keresést</a>
+        <a class="link" href="#"><span>Mire figyelj örökbefogadás előtt?</span><i class="fas fa-arrow-right"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section why">
+    <div class="wrap">
+      <div class="arguments">
+        <div class="section-head">
+          <h2 class="t-h2">Miért a Newpet?</h2>
+          <p class="lead t-body-l">Az örökbefogadás nagy döntés. Abban segítünk, hogy biztos információk alapján dönthess.</p>
+        </div>
+        <div class="features">
+          <div class="feature">
+            <span class="feature-icon"><i class="fas fa-shield-alt"></i></span>
+            <div><h3 class="t-h4">Csak ellenőrzött menhelyek</h3><p class="t-body">A menhelyeket csatlakozás előtt ellenőrizzük, így megbízható helyről fogadsz örökbe.</p></div>
+          </div>
+          <div class="feature">
+            <span class="feature-icon"><i class="fas fa-clipboard-check"></i></span>
+            <div><h3 class="t-h4">Minden fontos infó egy helyen</h3><p class="t-body">Oltások, chip, ivartalanítás, természet és gyerekbarátság – még a látogatás előtt.</p></div>
+          </div>
+          <div class="feature">
+            <span class="feature-icon"><i class="fas fa-comments"></i></span>
+            <div><h3 class="t-h4">Közvetlen kapcsolat</h3><p class="t-body">Az üzeneteid egyenesen a menhely munkatársaihoz érkeznek, nincs közvetítő.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="proof">
+        <div class="stats">
+          <div class="stat"><b>1 250+</b><span class="t-body-s">örökbefogadható állat</span></div>
+          <div class="stat"><b>48</b><span class="t-body-s">ellenőrzött menhely</span></div>
+          <div class="stat"><b>3 900+</b><span class="t-body-s">sikeres örökbefogadás</span></div>
+        </div>
+        <div class="hdivider"></div>
+        <figure class="testimonial" style="margin:0">
+          <i class="fas fa-quote-left"></i>
+          <blockquote class="t-body-l" style="margin:0">A menhely minden kérdésünkre gyorsan válaszolt, és két héttel az első üzenet után Bodri már nálunk aludt. Azóta el sem tudjuk képzelni nélküle az estéket.</blockquote>
+          <figcaption class="author">
+            <span class="avatar">A</span>
+            <div><span class="t-label">Anna</span><span class="t-body-s lead">Bodrit fogadta örökbe · Budapest</span></div>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt faq" id="gyik">
+    <div class="wrap">
+      <div class="faq-intro">
+        <div class="section-head">
+          <h2 class="t-h2">Gyakori kérdések</h2>
+          <p class="lead t-body-l">Nem találod a választ? Írj nekünk, és segítünk eligazodni.</p>
+        </div>
+        <a class="link" href="#"><span>Kapcsolat</span><i class="fas fa-arrow-right"></i></a>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item open">
+          <button class="faq-q t-h4" aria-expanded="true"><span>Mennyibe kerül az örökbefogadás?</span><span class="toggle"><i class="fas fa-minus"></i></span></button>
+          <p class="faq-a t-body">Az örökbefogadási díjat minden menhely maga határozza meg. Az állat adatlapján mindig látod, mennyi a díj, és mit tartalmaz – például oltásokat, chipet vagy ivartalanítást.</p>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q t-h4" aria-expanded="false"><span>Milyen feltételei vannak az örökbefogadásnak?</span><span class="toggle"><i class="fas fa-plus"></i></span></button>
+          <p class="faq-a t-body">A feltételeket a menhely határozza meg – ezeket az állat adatlapján és a menhely profilján találod.</p>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q t-h4" aria-expanded="false"><span>Mi történik, ha mégsem működik az együttélés?</span><span class="toggle"><i class="fas fa-plus"></i></span></button>
+          <p class="faq-a t-body">Ilyenkor először mindig a menhellyel egyeztess – az örökbefogadási szerződés rögzíti, mi a teendő.</p>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q t-h4" aria-expanded="false"><span>Kell regisztrálnom az üzenetküldéshez?</span><span class="toggle"><i class="fas fa-plus"></i></span></button>
+          <p class="faq-a t-body">Böngészni regisztráció nélkül is tudsz, üzenetet küldeni és kedvenceket menteni viszont csak belépve lehet.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shelters" id="menhelyeknek">
+    <div class="wrap">
+      <div class="shelter-card">
+        <div class="shelter-text">
+          <span class="pill-badge t-label"><i class="fas fa-home"></i>Menhelyeknek</span>
+          <h2 class="t-h2">Menhelyet vezetsz?</h2>
+          <p class="t-body-l">Csatlakozz ingyenesen, töltsd fel örökbefogadható állataidat, és érd el azokat, akik valóban otthont keresnek nekik.</p>
+        </div>
+        <div class="shelter-actions">
+          <a class="btn btn-l btn-primary" href="#">Menhely regisztrálása</a>
+          <a class="btn btn-l btn-secondary" href="#">Tudj meg többet</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="logo" href="#" aria-label="Newpet főoldal">
+          <img class="logo-paw" src="assets/logo-paw.svg" alt="" onerror="this.parentNode.classList.add('noimg')">
+          <img class="logo-word" src="assets/logo-newpet.svg" alt="Newpet" onerror="this.parentNode.classList.add('noimg')">
+          <span class="logo-fallback"><i class="fas fa-paw"></i>NEWPET</span>
+        </a>
+        <p class="t-body-s">Ellenőrzött magyar menhelyek örökbefogadható állatai – egy helyen.</p>
+        <div class="social">
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+      <div class="footer-cols t-body-s">
+        <div class="footer-col"><span class="t-label">Örökbefogadás</span><a href="#allatok">Állatok</a><a href="#">Menhelyek</a><a href="#igy-mukodik">Így működik</a><a href="#gyik">Gyakori kérdések</a></div>
+        <div class="footer-col"><span class="t-label">Newpet</span><a href="#">Rólunk</a><a href="#">Hírek</a><a href="#">Kapcsolat</a></div>
+        <div class="footer-col"><span class="t-label">Menhelyeknek</span><a href="#">Menhely regisztrálása</a><a href="#">Belépés menhelyeknek</a><a href="#">Útmutató menhelyeknek</a></div>
+      </div>
+    </div>
+    <hr>
+    <div class="footer-bottom t-body-s">
+      <span>© 2026 Newpet</span>
+      <div class="legal"><a href="#">Adatvédelem</a><a href="#">ÁSZF</a><a href="#">Süti-beállítások</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// species chips: single-select, updates the search button label
+const label = document.getElementById('search-label');
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === chip));
+    label.textContent = chip.dataset.label;
+  });
+});
+
+// "Helyzetem": fill the place field from the browser's location
+document.getElementById('locate').addEventListener('click', () => {
+  const input = document.getElementById('place');
+  if (!navigator.geolocation) return;
+  input.value = 'Helymeghatározás…';
+  navigator.geolocation.getCurrentPosition(
+    () => { input.value = 'Jelenlegi helyzetem'; },
+    () => { input.value = ''; input.focus(); }
+  );
+});
+
+// save (heart) toggles on animal cards
+document.querySelectorAll('.save').forEach(btn => btn.addEventListener('click', () => {
+  const on = btn.getAttribute('aria-pressed') !== 'true';
+  btn.setAttribute('aria-pressed', on);
+  btn.firstElementChild.className = (on ? 'fas' : 'far') + ' fa-heart';
+}));
+
+// FAQ accordion
+document.querySelectorAll('.faq-q').forEach(q => q.addEventListener('click', () => {
+  const item = q.parentNode, open = !item.classList.contains('open');
+  item.classList.toggle('open', open);
+  q.setAttribute('aria-expanded', open);
+  q.querySelector('.toggle i').className = 'fas fa-' + (open ? 'minus' : 'plus');
+}));
+</script>
+</body>
+</html>
