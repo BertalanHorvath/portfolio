@@ -29,3 +29,19 @@ assets/
   no scaling). A responsive rebuild for narrow viewports is a natural next step.
 - Project data (name, category, accent colour, description, case-study copy) lives in the
   `P` array near the bottom of `index.html`.
+
+## Newpet landing page
+
+`newpet/` holds a standalone build of the Newpet home page (Figma: *Newpet – D*, frame
+"HOME – UX v2"). Open `newpet/index.html` directly or via the static server above
+(`http://localhost:8080/newpet/`).
+
+- Plain HTML/CSS/JS; Font Awesome 5 icons from cdnjs, logo/pet icons exported from Figma as SVG,
+  photos exported and cropped to WebP in `newpet/assets/`.
+- Desktop layout matches the 1440px frame; breakpoints at 1279/1100/1000/640px fold the hero,
+  cards, steps, FAQ and footer down to a single column with a hamburger menu.
+- The design uses Proxima Nova (commercial). The page lists it first so it is picked up when
+  installed/licensed, and falls back to Figtree from Google Fonts.
+- Interactive bits: species chips update the search button label, "Helyzetem" uses browser
+  geolocation, favourite hearts toggle, FAQ accordion, scroll reveal animations.
+- Animal cards are rendered from the `ANIMALS` array at the bottom of the file.
