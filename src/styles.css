@@ -1,0 +1,105 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  /* Base background of every screen (Figma frame fill). */
+  background: #151517;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  font-kerning: normal;
+}
+
+.viewport {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage {
+  position: relative;
+  flex: none;
+}
+
+.artboard {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+
+.artboard a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.artboard img {
+  user-select: none;
+}
+
+/*
+ * Only layers with Figma interactions take the pointer: decorative layers stacked above them
+ * (e.g. the transparent mockup groups over the project tags) must not swallow hovers or clicks.
+ */
+.artboard * {
+  pointer-events: none;
+}
+
+.artboard .fx-interactive {
+  pointer-events: auto;
+  cursor: default;
+}
+
+a.fx-interactive {
+  cursor: pointer;
+}
+
+/* No focus style is defined in Figma: a discreet ring in the accent colour. */
+.fx-focus:focus {
+  outline: none;
+}
+
+.fx-focus:focus-visible {
+  outline: 1px solid #7e8bff;
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/*
+ * Baseline calibration per font family. Chrome and Figma place the glyphs inside the same line
+ * box slightly differently; these offsets minimise the pixel difference against the Figma renders
+ * (scripts/verify/calibrate.mjs).
+ */
+.fx-text {
+  position: relative;
+}
+
+.fx-ff-poppins {
+  top: 0.75px;
+}
+
+.fx-ff-inter {
+  top: 0.5px;
+}
