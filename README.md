@@ -14,7 +14,7 @@ npm install && npm start        # builds and serves on http://localhost:4173
 The Figma file is the single source of truth. Nothing in the UI is re-drawn by hand:
 
 1. **`scripts/figma/sync.mjs`** reads the DESIGN section and every reachable component variant through the Figma REST API
-   (`FIGMA_TOKEN=… npm run figma:sync`). It compiles them into `src/figma/scene.json`: geometry
+   (`npm run figma:sync`; the token comes from `FIGMA_TOKEN` or from an environment API credential that adds `X-Figma-Token` for `api.figma.com`). It compiles them into `src/figma/scene.json`: geometry
    (relativeTransform + size), fills, gradients, image fills, strokes, radii, effects, text styles and runs,
    vector paths, masks and prototype interactions. It also downloads the original image fills (`public/figma/i`).
    Static mockup layers are exported as 2x renders (`public/figma/r`). The raw API responses are cached in `figma-cache/`

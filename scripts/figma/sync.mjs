@@ -2,7 +2,9 @@
 /**
  * Figma → scene compiler.
  *
- *   FIGMA_TOKEN=... node scripts/figma/sync.mjs            fetch + compile + export assets
+ *   node scripts/figma/sync.mjs                             fetch + compile + export assets
+ *     (the token comes from FIGMA_TOKEN, or from an environment API credential that adds the
+ *      X-Figma-Token header to api.figma.com requests)
  *   node scripts/figma/sync.mjs --compile-only              recompile from the cached raw JSON
  *
  * Reads the DESIGN section of the Portfolio_2026 file through the Figma REST API, and writes
@@ -54,9 +56,8 @@ const TOKEN = process.env.FIGMA_TOKEN;
 // REST helpers
 
 async function api(p) {
-  if (!TOKEN) throw new Error('FIGMA_TOKEN is not set');
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`https://api.figma.com/v1/${p}`, { headers: { 'X-Figma-Token': TOKEN } });
+    const res = await fetch(`https://api.figma.com/v1/${p}`, { headers: TOKEN ? { 'X-Figma-Token': TOKEN } : {} });
     if (res.status === 429 && attempt < 6) {
       const wait = Number(res.headers.get('retry-after') || 10) * 1000;
       if (wait > 10 * 60 * 1000) throw new Error(`Figma rate limit: retry after ${Math.round(wait / 3600000)} h`);
@@ -64,7 +65,10 @@ async function api(p) {
       await new Promise((r) => setTimeout(r, wait));
       continue;
     }
-    if (!res.ok) throw new Error(`${res.status} ${p}: ${await res.text()}`);
+    if (!res.ok) {
+      const hint = res.status === 403 && !TOKEN ? ' (set FIGMA_TOKEN or add the Figma token as an environment API credential)' : '';
+      throw new Error(`${res.status} ${p}: ${await res.text()}${hint}`);
+    }
     return res.json();
   }
 }
@@ -597,7 +601,7 @@ async function main() {
   const fileName = (id) => id.replace(/[^0-9A-Za-z]+/g, '_');
   const missingR = rasterList.filter((id) => !existing(OUT_RASTER, fileName(id)) && !fs.existsSync(path.join(OUT_RASTER, `${fileName(id)}.empty`)));
   for (let k = 0; k < missingR.length; k += 40) {
-    if (args.has('--compile-only')) throw new Error('raster exports missing; run with FIGMA_TOKEN');
+    if (args.has('--compile-only')) throw new Error('raster exports missing; run without --compile-only and with Figma access');
     const batch = missingR.slice(k, k + 40);
     const res = await api(`images/${FILE_KEY}?ids=${encodeURIComponent(batch.join(','))}&scale=${RASTER_SCALE}&format=png`);
     for (const id of batch) {
