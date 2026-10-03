@@ -15,7 +15,10 @@ import {
 export interface RenderHooks {
   /** Lets the app swap an interactive / semantic node for a component; return undefined to skip. */
   renderSpecial?: (n: FNode, render: (n: FNode) => ReactNode) => ReactNode | undefined;
+  /** A looping video that plays in place of an image fill (Figma can only hold its still frame). */
+  videoFill?: (n: FNode, p: Paint) => VideoSource[] | undefined;
 }
+export interface VideoSource { src: string; type: string }
 export const HooksContext = createContext<RenderHooks>({});
 
 const px = (v: number) => `${+v.toFixed(4)}px`;
@@ -46,7 +49,19 @@ export const boxStyle = (n: FNode): CSSProperties => ({
 });
 
 /** One Figma paint as a layer filling its box. */
-function PaintLayer({ p, w, h, br }: { p: Paint; w: number; h: number; br?: string }) {
+function VideoFill({ sources, poster, mode, opacity }: { sources: VideoSource[]; poster: string; mode: string; opacity?: number }) {
+  // With reduced motion the Figma still frame stays on screen.
+  const still = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  return (
+    <video poster={poster} autoPlay={!still} muted loop playsInline preload="auto" aria-hidden="true"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: mode === 'FIT' ? 'contain' : 'cover', opacity }}>
+      {sources.map((s) => <source key={s.src} src={s.src} type={s.type} />)}
+    </video>
+  );
+}
+
+function PaintLayer({ p, w, h, br, video }: { p: Paint; w: number; h: number; br?: string; video?: VideoSource[] }) {
+  if (video && p.t === 'I') return <VideoFill sources={video} poster={imageUrl(p.ref)} mode={p.mode} opacity={p.o} />;
   const base: CSSProperties = { position: 'absolute', inset: 0, borderRadius: br, mixBlendMode: blendCss(p.bm) as CSSProperties['mixBlendMode'] };
   if (p.t === 'S') return <div style={{ ...base, background: rgba(p.c) }} />;
   if (p.t === 'L') return <div style={{ ...base, background: linearGradientCss(p, w, h), opacity: p.o }} />;
@@ -265,6 +280,7 @@ function RasterNode({ n }: { n: FNode }) {
 
 /** Visual content of a node without its outer box (used by interactive wrappers too). */
 export function NodeContent({ n }: { n: FNode }) {
+  const hooks = useContext(HooksContext);
   if (n.r) return <RasterNode n={n} />;
   if (n.t === 'TEXT') return <TextNode n={n} />;
   if (n.t === 'VECTOR') return <VectorNode n={n} />;
@@ -283,7 +299,7 @@ export function NodeContent({ n }: { n: FNode }) {
           position: 'absolute', inset: 0, borderRadius: br, overflow: 'hidden', boxShadow: ds,
           backdropFilter: bb ? blurCss(bb.r) : undefined, WebkitBackdropFilter: bb ? blurCss(bb.r) : undefined,
         }}>
-          {fills.map((p, k) => <PaintLayer key={k} p={p} w={n.w} h={n.h} />)}
+          {fills.map((p, k) => <PaintLayer key={k} p={p} w={n.w} h={n.h} video={hooks.videoFill?.(n, p)} />)}
         </div>
       )}
       {is && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: br, boxShadow: is }} />}
