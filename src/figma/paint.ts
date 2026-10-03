@@ -66,3 +66,24 @@ export function dropShadowFilter(fx: Effect[] | undefined) {
 }
 
 export const blendCss = (bm?: string) => (bm ? bm.toLowerCase().replace(/_/g, '-') : undefined);
+
+/** Every image and Figma render a node tree draws (for preloading before an animation). */
+export function assetUrls(n: import('./types').FNode, out = new Set<string>()): Set<string> {
+  for (const p of [...(n.f || []), ...(n.s || [])]) if (p.t === 'I') out.add(imageUrl(p.ref));
+  if (n.r) {
+    const info = scene.rasters[n.r.id];
+    if (info) out.add(`${import.meta.env.BASE_URL}${info.src}`);
+  }
+  for (const c of n.c || []) assetUrls(c, out);
+  return out;
+}
+
+/** Loads and decodes images so swapping them in mid-animation shows no empty frame. */
+export function preloadImages(urls: Iterable<string>, timeoutMs = 2500): Promise<void> {
+  const jobs = [...urls].map((src) => {
+    const img = new Image();
+    img.src = src;
+    return img.decode().catch(() => undefined);
+  });
+  return Promise.race([Promise.all(jobs).then(() => undefined), new Promise<void>((r) => setTimeout(r, timeoutMs))]);
+}

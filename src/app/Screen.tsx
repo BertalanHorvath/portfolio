@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { HooksContext, Node, type VideoSource } from '../figma/Node';
 import { scene } from '../figma/scene';
+import { assetUrls, preloadImages } from '../figma/paint';
 import { useAnimatedTree } from '../figma/useAnimatedTree';
 import type { Route } from './routes';
 import { makeRenderSpecial } from './special';
@@ -37,8 +38,15 @@ export function Screen({ route }: { route: Route }) {
     // Verification hook (scripts/verify): hold the entry state for a screenshot.
     if ((window as { __HOLD_ENTRY__?: boolean }).__HOLD_ENTRY__) return;
     const end = scene.screens[timer.to];
-    const id = window.setTimeout(() => animateTo(end, timer.tr), (timer.delay ?? 0) * 1000);
-    return () => window.clearTimeout(id);
+    // The end state may use other images than the entry state: have them decoded before the
+    // smart-animate starts, so the cross-dissolve never shows an empty frame.
+    let cancelled = false;
+    let id = 0;
+    const ready = preloadImages(assetUrls(end));
+    ready.then(() => {
+      if (!cancelled) id = window.setTimeout(() => animateTo(end, timer.tr), (timer.delay ?? 0) * 1000);
+    });
+    return () => { cancelled = true; window.clearTimeout(id); };
   }, [start, set, animateTo]);
 
   return (

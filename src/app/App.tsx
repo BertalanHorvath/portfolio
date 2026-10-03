@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { Screen } from './Screen';
 import { routeByPath } from './routes';
+import { scene } from '../figma/scene';
+import { assetUrls, preloadImages } from '../figma/paint';
 
 /** Reference artboard size of every Figma screen. */
 export const STAGE_W = 1442;
@@ -36,6 +38,17 @@ function useStageScale() {
 export function App() {
   const route = useHashRoute();
   const scale = useStageScale();
+
+  // Once the first screen is up, warm the cache with every other screen's images so moving
+  // between pages and projects never waits on the network.
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const urls = new Set<string>();
+      for (const n of Object.values(scene.screens)) assetUrls(n, urls);
+      preloadImages(urls, 60000);
+    }, 1200);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     document.title = route.path === '/' ? 'Bertalan Horvath — Portfolio' : `${route.title} — Bertalan Horvath`;

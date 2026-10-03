@@ -128,7 +128,10 @@ function lerpPaints(a: Paint[] | undefined, b: Paint[] | undefined, p: number): 
   const out: Paint[] = [];
   for (let k = 0; k < n; k++) {
     const pa = A[k], pb = B[k];
-    if (pa && pb) out.push(lerpPaint(pa, pb, p));
+    if (pa && pb && pa.t === 'I' && pb.t === 'I' && pa.ref !== pb.ref) {
+      // Different image: cross-dissolve, the new image fading in over the old one.
+      out.push(pa, fadePaint(pb, clamp01(p)));
+    } else if (pa && pb) out.push(lerpPaint(pa, pb, p));
     else if (pb) out.push(fadePaint(pb, clamp01(p)));
     else if (pa) out.push(fadePaint(pa, clamp01(1 - p)));
   }
