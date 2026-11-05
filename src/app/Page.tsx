@@ -75,10 +75,19 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
  * - the Digital Citizenship hero mockup reaches above the hero, under the fixed project bar, which
  *   cut its top off. It moves down part of the way (the bar is also clear at the top of the page,
  *   see FrostedBar) and is drawn above the hero's border, which would otherwise cross it.
- * - the mobile Problem Register subtitle "for state institutions" has a 68 px line height on 36 px
- *   text (a desktop value): its two lines drifted apart. It takes the title's 46 px line height.
+ * - the Problem Register subtitle "for state institutions" is 30 px on mobile, where it then fits on
+ *   one line (34 px line height), so the 102 px its second 68 px line took is closed up below it;
+ *   and 36 px on tablet, as on desktop.
  */
-const ADJUSTMENTS: { bp: Breakpoint; route: string; match: (n: FNode) => boolean; patch: (n: FNode) => FNode }[] = [
+interface Adjustment {
+  bp: Breakpoint;
+  route: string;
+  match?: (n: FNode) => boolean;
+  patch?: (n: FNode) => FNode;
+  /** remove `dy` px of vertical space at screen height `y` (layers below move up) */
+  collapse?: { y: number; dy: number };
+}
+const ADJUSTMENTS: Adjustment[] = [
   {
     bp: 'desktop', route: 'projects/eletesemeny',
     match: (n) => n.n === 'Group 1171275454',
@@ -87,19 +96,65 @@ const ADJUSTMENTS: { bp: Breakpoint; route: string; match: (n: FNode) => boolean
   {
     bp: 'mobile', route: 'projects/problem-register',
     match: (n) => n.t === 'TEXT' && n.tx === 'for state institutions',
-    patch: (n) => ({ ...n, h: 92, ts: { ...n.ts, lh: 46 } }),
+    patch: (n) => ({ ...n, h: 34, ts: { ...n.ts, fs: 30, lh: 34 } }),
+  },
+  // the subtitle below it starts at 453 (title-block 216 + 237); "for state institutions" now ends at 339
+  { bp: 'mobile', route: 'projects/problem-register', collapse: { y: 453, dy: 102 } },
+  {
+    bp: 'tablet', route: 'projects/problem-register',
+    match: (n) => n.t === 'TEXT' && n.tx === 'for state institutions',
+    patch: (n) => ({ ...n, ts: { ...n.ts, fs: 36 } }),
   },
 ];
+
+const shiftY = (n: FNode, dy: number): FNode => ({ ...n, m: [n.m[0], n.m[1], n.m[2], n.m[3], n.m[4], n.m[5] + dy] });
+
+/**
+ * Removes dy px of height at screen height y: layers starting below it move up, frames reaching
+ * across it get shorter (leaf shapes reaching across, e.g. glows, keep their size). Scroll anchors
+ * below it move up as well.
+ */
+function collapse(root: FNode, y: number, dy: number): FNode {
+  const walk = (n: FNode, top: number): FNode => {
+    const c = n.c?.map((k) => {
+      if (k.sb === 'F') return k;
+      const kt = top + k.m[5];
+      if (kt >= y) {
+        if (scene.anchors[k.i] != null && !movedAnchors.has(k.i)) {
+          scene.anchors[k.i] -= dy;
+          movedAnchors.add(k.i);
+        }
+        moveAnchors(k, dy);
+        return shiftY(k, -dy);
+      }
+      return kt + k.h > y && k.c?.length ? walk(k, kt) : k;
+    });
+    return { ...n, h: n.h - dy, c };
+  };
+  return walk(root, 0);
+}
+const movedAnchors = new Set<string>();
+function moveAnchors(n: FNode, dy: number) {
+  for (const k of n.c || []) {
+    if (scene.anchors[k.i] != null && !movedAnchors.has(k.i)) {
+      scene.anchors[k.i] -= dy;
+      movedAnchors.add(k.i);
+    }
+    moveAnchors(k, dy);
+  }
+}
 
 function adjust(n: FNode, bp: Breakpoint, route: string): FNode {
   const list = ADJUSTMENTS.filter((x) => x.bp === bp && x.route === route);
   if (!list.length) return n;
   const walk = (x: FNode): FNode => {
-    const hit = list.find((l) => l.match(x));
-    if (hit) return hit.patch(x);
+    const hit = list.find((l) => l.match?.(x));
+    if (hit?.patch) return hit.patch(x);
     return x.c ? { ...x, c: x.c.map(walk) } : x;
   };
-  return walk(n);
+  let out = walk(n);
+  for (const l of list) if (l.collapse) out = collapse(out, l.collapse.y, l.collapse.dy);
+  return out;
 }
 
 export function Page({ bp, route, vw, vh }: { bp: Breakpoint; route: string; vw: number; vh: number }) {
@@ -149,7 +204,7 @@ function PlayedPage({ chain, trees, bp, vw, vh }: { chain: string[]; trees: Reco
   }, [chain, trees, start, set, animateTo]);
 
   const meta = scene.meta[chain[0]];
-  const H = meta.h;
+  const H = trees[chain[0]].h; // the screen height, after any adjustment
   const s = scaleFor(bp, meta.w, vw, vh);
   const viewH = vh / s;
   // Windows wider than the scaled design: the page still fills them (see widen()).
