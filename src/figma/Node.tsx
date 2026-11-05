@@ -120,7 +120,7 @@ function VectorNode({ n }: { n: FNode }) {
   draw(n.fg, n.f);
   draw(n.sg, n.s);
   return (
-    <svg width={Math.max(n.w, 0.01)} height={Math.max(n.h, 0.01)} overflow="visible" aria-hidden="true"
+    <svg width={Math.max(n.w, 1)} height={Math.max(n.h, 1)} overflow="visible" aria-hidden="true"
       style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}
       dangerouslySetInnerHTML={{ __html: (defs.length ? `<defs>${defs.join('')}</defs>` : '') + body }} />
   );
@@ -189,9 +189,35 @@ function textCss(s: TextStyle | undefined, w: number, h: number): CSSProperties 
 // Figma's soft line break (U+2028) and paragraph separator: forced breaks in the browser.
 const SOFT_BREAKS = new RegExp(`[${String.fromCharCode(0x2028)}${String.fromCharCode(0x2029)}]`, 'g');
 
+/** A lone symbol glyph (arrows, ⟳ …): not in the web font, so the fallback font's metrics differ. */
+const SYMBOL = /^[\u2190-\u21ff\u2300-\u23ff\u2460-\u27ff\u2900-\u2bff]$/u;
+
+/**
+ * Symbols whose fallback glyph differs from the one Figma draws: drawn as SVG in the current
+ * colour, traced from Figma's render.
+ */
+const GLYPHS: Record<string, (fs: number) => ReactNode> = {
+  // ⟳ clockwise gapped circle arrow: thin ring open at the upper right, arrowhead at its right end
+  '\u27f3': (fs) => (
+    <svg width={fs * 0.88} height={fs * 0.88} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13.6 3.15A9 9 0 1 0 20.9 13.6" />
+      <path d="M17.7 11.4l3.2 2.3 2.3-3.3" />
+    </svg>
+  ),
+};
+
 function TextNode({ n }: { n: FNode }) {
   const text = (n.tx ?? '').replace(SOFT_BREAKS, '\n');
   const base = textCss(n.ts, n.w, n.h);
+  if (SYMBOL.test(text)) {
+    // Centred in its box, as Figma draws it, whatever the fallback font's side bearings.
+    return (
+      <div aria-hidden="true" style={{ ...base, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+        {GLYPHS[text] ? GLYPHS[text](n.ts?.fs ?? 16) : text}
+      </div>
+    );
+  }
   let content: ReactNode = text;
   if (n.runs && n.ost) {
     content = n.runs.map(([a, b, k], i) => {
@@ -316,7 +342,7 @@ export function NodeContent({ n }: { n: FNode }) {
         </div>
       )}
       {is && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: br, boxShadow: is }} />}
-      {kids && (n.clip ? <div style={{ position: 'absolute', inset: 0, borderRadius: br, overflow: 'clip' }}>{kids}</div> : kids)}
+      {kids && (n.clip ? <div style={{ position: 'absolute', inset: 0, borderRadius: br, overflow: 'hidden' }}>{kids}</div> : kids)}
       {strokeLayer(n)}
     </>
   );

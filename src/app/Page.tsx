@@ -70,6 +70,26 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
   return shiftX(n, extra / 2);
 }
 
+/**
+ * Layers moved from their Figma position (documented in the README): the Digital Citizenship hero
+ * mockup reaches above the hero, under the fixed project bar, which cut its top off. It moves down
+ * just enough to start below the bar (bar bottom 80, mockup top 5 in its end state).
+ */
+const NUDGES: { bp: Breakpoint; route: string; layer: string; dy: number }[] = [
+  { bp: 'desktop', route: 'projects/eletesemeny', layer: 'Group 1171275454', dy: 76 },
+];
+
+function nudge(n: FNode, bp: Breakpoint, route: string): FNode {
+  const list = NUDGES.filter((x) => x.bp === bp && x.route === route);
+  if (!list.length) return n;
+  const walk = (x: FNode): FNode => {
+    const hit = list.find((l) => l.layer === x.n);
+    if (hit) return { ...x, m: [x.m[0], x.m[1], x.m[2], x.m[3], x.m[4], x.m[5] + hit.dy] };
+    return x.c ? { ...x, c: x.c.map(walk) } : x;
+  };
+  return walk(n);
+}
+
 export function Page({ bp, route, vw, vh }: { bp: Breakpoint; route: string; vw: number; vh: number }) {
   const ids = useMemo(
     () => Object.keys(scene.meta).filter((id) => scene.meta[id].bp === bp && scene.meta[id].route === route),
@@ -80,10 +100,10 @@ export function Page({ bp, route, vw, vh }: { bp: Breakpoint; route: string; vw:
     let live = true;
     setTrees(null);
     Promise.all(ids.map((id) => loadScreen(id).then((n) => [id, n] as const))).then((pairs) => {
-      if (live) setTrees(Object.fromEntries(pairs));
+      if (live) setTrees(Object.fromEntries(pairs.map(([id, n]) => [id, nudge(n, bp, route)])));
     });
     return () => { live = false; };
-  }, [ids]);
+  }, [ids, bp, route]);
   if (!ids.length) return <NotFound />;
   if (!trees) return <div className="page-loading" aria-busy="true" />;
   return <PlayedPage chain={orderChain(ids, trees)} trees={trees} bp={bp} vw={vw} vh={vh} />;

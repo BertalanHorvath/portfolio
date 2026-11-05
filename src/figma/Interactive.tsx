@@ -4,7 +4,7 @@ import {
 } from 'react';
 import { NodeContent, nodeOuterStyle } from './Node';
 import { scene } from './scene';
-import type { FNode, Interaction } from './types';
+import type { FNode, Interaction, TextStyle } from './types';
 import { useAnimatedTree } from './useAnimatedTree';
 import { navigate, routeOfScreen, href as routeHref } from '../app/routes';
 import { scrollToY, usePage } from '../app/scroll';
@@ -46,10 +46,48 @@ function withOverrides(base: FNode, v: FNode): FNode {
   return merge(base, v);
 }
 
-/** A variant rendered in place of an instance keeps the instance's placement and text overrides. */
+const scaleStyle = (t: TextStyle | undefined, k: number): TextStyle | undefined =>
+  t && { ...t, fs: t.fs != null ? t.fs * k : t.fs, lh: t.lh != null ? t.lh * k : t.lh, ls: t.ls != null ? t.ls * k : t.ls };
+const scalePath = (d: string, k: number) => d.replace(/-?\d*\.?\d+(?:e-?\d+)?/gi, (x) => String(+x * k));
+
+/** A layer tree scaled by k (Figma's scaled instances: geometry, text, strokes, radii, effects). */
+export function scaleTree(n: FNode, k: number): FNode {
+  const rr = n.rr == null ? n.rr : typeof n.rr === 'number' ? n.rr * k : (n.rr.map((r) => r * k) as typeof n.rr);
+  return {
+    ...n,
+    m: [n.m[0], n.m[1], n.m[2], n.m[3], n.m[4] * k, n.m[5] * k],
+    w: n.w * k,
+    h: n.h * k,
+    ts: scaleStyle(n.ts, k),
+    ost: n.ost && Object.fromEntries(Object.entries(n.ost).map(([key, t]) => [key, scaleStyle(t, k)!])),
+    sw: n.sw != null ? n.sw * k : n.sw,
+    isw: n.isw && (n.isw.map((v) => v * k) as typeof n.isw),
+    sd: n.sd?.map((v) => v * k),
+    rr,
+    fx: n.fx?.map((e) => (e.t === 'DS' || e.t === 'IS' ? { ...e, x: e.x * k, y: e.y * k, r: e.r * k, s: e.s * k } : { ...e, r: e.r * k })),
+    fg: n.fg?.map(([d, eo]) => [scalePath(d, k), eo]),
+    sg: n.sg?.map(([d, eo]) => [scalePath(d, k), eo]),
+    c: n.c?.map((c) => scaleTree(c, k)),
+  };
+}
+
+/** Scale of an instance relative to its main component (1 unless it was scaled in Figma). */
+function instanceScale(base: FNode): number {
+  const def = base.cid ? scene.variants[base.cid] : undefined;
+  if (!def || !def.w || !def.h) return 1;
+  const kx = base.w / def.w, ky = base.h / def.h;
+  return Math.abs(kx - 1) > 0.01 && Math.abs(kx - ky) < 0.03 * kx ? kx : 1;
+}
+
+/**
+ * A variant rendered in place of an instance keeps the instance's placement, scale and text
+ * overrides, as in Figma.
+ */
 export function variantAt(base: FNode, variantId: string): FNode {
-  const v = scene.variants[variantId];
+  let v = scene.variants[variantId];
   if (!v) return base;
+  const k = instanceScale(base);
+  if (k !== 1) v = scaleTree(v, k);
   return { ...withOverrides(base, v), i: base.i, m: base.m, ix: v.ix };
 }
 

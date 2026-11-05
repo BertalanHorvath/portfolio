@@ -11,6 +11,17 @@ body,
   height: 100%;
 }
 
+/* The pages scroll vertically only: nothing may widen the document (some browsers count the
+   overflow of transformed layers), and sideways swipes do not pan it. */
+html {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
+#root {
+  overflow-x: clip;
+}
+
 body {
   /* Base background of every screen (Figma frame fill). */
   background: #151517;
@@ -25,7 +36,7 @@ body {
   position: relative;
   display: block;
   margin: 0 auto;
-  overflow: clip;
+  overflow: hidden;
 }
 
 .artboard {
