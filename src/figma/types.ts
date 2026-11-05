@@ -95,12 +95,42 @@ export interface FNode {
   fg?: [string, 0 | 1][];
   sg?: [string, 0 | 1][];
   c?: FNode[];
+  /** prototype scroll behaviour: F = fixed (with its vertical constraint), S = sticky */
+  sb?: 'F' | 'S';
+  cv?: 'TOP' | 'BOTTOM' | 'CENTER' | 'TOP_BOTTOM' | 'SCALE';
+  /** sticky: top offset in its screen and how far it can travel inside its parent */
+  st?: { y0: number; max: number };
+  /** table of contents rows of a case study and their target offsets in the screen */
+  toc?: Toc;
+}
+
+export interface RowStyle {
+  s?: Paint[];
+  f?: Paint[];
+  kids: ({ fill?: Paint[] } | { f?: Paint[] })[];
+}
+export interface Toc {
+  items: { id: string; label: string; target: number | null }[];
+  active: RowStyle;
+  idle: RowStyle;
+}
+
+export type Breakpoint = 'desktop' | 'tablet' | 'mobile';
+export interface ScreenMeta {
+  bp: Breakpoint;
+  /** route key: '' (home), 'creative-suite', 'professional-interests', 'projects/<slug>' */
+  route: string;
+  name: string;
+  w: number;
+  h: number;
+  file: string;
 }
 
 export interface Scene {
-  screens: Record<string, FNode>;
   variants: Record<string, FNode>;
-  routes: Record<string, string>;
+  meta: Record<string, ScreenMeta>;
+  /** SCROLL_TO targets: node id → offset from the top of its screen */
+  anchors: Record<string, number>;
   images: Record<string, string>;
   rasters: Record<string, { src: string; pw: number; ph: number } | null>;
   rasterScale: number;

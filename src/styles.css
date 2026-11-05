@@ -14,24 +14,18 @@ body,
 body {
   /* Base background of every screen (Figma frame fill). */
   background: #151517;
-  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: geometricPrecision;
   font-kerning: normal;
 }
 
-.viewport {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stage {
+/* The scrolling page: the Figma frame at its scale, centred on wider windows. */
+.page {
   position: relative;
-  flex: none;
+  display: block;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
 .artboard {
@@ -39,6 +33,73 @@ body {
   left: 0;
   top: 0;
   transform-origin: 0 0;
+}
+
+/* Layers with Figma's "fixed" scroll behaviour (sidebar, header, dock, case navigation). */
+.fixed-layer {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  height: 100vh;
+  height: 100dvh;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.page-loading,
+.page-missing {
+  min-height: 100vh;
+}
+
+.page-missing {
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  color: #a3a3aa;
+  font: 15px/1.5 'Poppins', sans-serif;
+  text-align: center;
+}
+
+.page-missing a {
+  color: #fff;
+}
+
+/* Dissolve navigation (tablet / mobile dock): the new page fades in over the old one. */
+.page-leaving {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 0;
+}
+
+.page-entering {
+  position: relative;
+  z-index: 1;
+  animation-name: fx-dissolve;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes fx-dissolve {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Links and buttons drawn by Figma layers: no browser chrome of their own. */
+.fx-reset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  appearance: none;
 }
 
 .artboard a {

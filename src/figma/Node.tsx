@@ -240,24 +240,27 @@ function maskStyle(mask: FNode, pw: number, ph: number): { outer: CSSProperties;
   };
 }
 
-/** Children, honouring Figma masks (a mask clips every sibling above it). */
+/**
+ * Children, honouring Figma masks: a mask clips the siblings above it, up to the next mask, which
+ * starts a mask group of its own (as in Figma's layer stack).
+ */
 function Children({ n }: { n: FNode }) {
   const kids = n.c || [];
   const out: ReactNode[] = [];
-  for (let k = 0; k < kids.length; k++) {
+  let k = 0;
+  while (k < kids.length) {
     const c = kids[k];
-    if (c.mask && !c.hid) {
-      const rest = kids.slice(k + 1);
-      const ms = maskStyle(c, n.w, n.h);
-      const inner = rest.map((r) => <Node key={r.i} n={r} />);
-      out.push(
-        ms ? (
-          <div key={`mask-${c.i}`} style={ms.outer}>{ms.inner ? <div style={ms.inner}>{inner}</div> : inner}</div>
-        ) : inner,
-      );
-      break;
+    if (!(c.mask && !c.hid)) {
+      out.push(<Node key={c.i} n={c} />);
+      k++;
+      continue;
     }
-    out.push(<Node key={c.i} n={c} />);
+    let end = k + 1;
+    while (end < kids.length && !(kids[end].mask && !kids[end].hid)) end++;
+    const inner = kids.slice(k + 1, end).map((r) => <Node key={r.i} n={r} />);
+    const ms = maskStyle(c, n.w, n.h);
+    out.push(ms ? <div key={`mask-${c.i}`} style={ms.outer}>{ms.inner ? <div style={ms.inner}>{inner}</div> : inner}</div> : inner);
+    k = end;
   }
   return <>{out}</>;
 }

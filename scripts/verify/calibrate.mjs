@@ -17,7 +17,7 @@ await new Promise((r) => server.listen(0, r));
 const base = `http://localhost:${server.address().port}/`;
 const fam = process.argv[2];
 const shots = { home: '/', cs: '/creative-suite', pi: '/professional-interests', 'p01-end': '/projects/bettair' };
-const browser = await chromium.launch();
+const browser = await chromium.launch({ executablePath: fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined });
 for (const shift of [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1.25, 1.5]) {
   let total = 0, count = 0;
   for (const [name, route] of Object.entries(shots)) {

@@ -1,7 +1,13 @@
 # Bertalan Horvath — Portfolio
 
-Implementation of the Figma file **Portfolio_2026** (`x2wdn04Y2Cfls5cy54JwU6`, section `DESIGN`, node `725:5150`),
-built at the 1442 × 962 reference artboard with the prototype's interactions and Smart Animate transitions.
+Responsive implementation of the Figma file **Portfolio_2026** (`x2wdn04Y2Cfls5cy54JwU6`) with the prototype's
+interactions and Smart Animate transitions. Three designs, one per breakpoint:
+
+| Window width | Design | Figma section | Scale |
+| --- | --- | --- | --- |
+| ≥ 1200 px | desktop, 1442 wide | `725:5150` | `min(width / 1442, height / 962)` |
+| 600–1199 px | tablet, 810 wide | `1394:17140` | `min(width / 810, 1.25)`, centred |
+| < 600 px | mobile, 390 wide | `1366:11860` | `min(width / 390, 1.25)`, centred |
 
 ```sh
 npm install && npm start        # builds and serves on http://localhost:4173
@@ -13,84 +19,67 @@ npm install && npm start        # builds and serves on http://localhost:4173
 
 The Figma file is the single source of truth. Nothing in the UI is re-drawn by hand:
 
-1. **`scripts/figma/sync.mjs`** reads the DESIGN section and every reachable component variant through the Figma REST API
-   (`npm run figma:sync`; the token comes from `FIGMA_TOKEN` or from an environment API credential that adds `X-Figma-Token` for `api.figma.com`). It compiles them into `src/figma/scene.json`: geometry
-   (relativeTransform + size), fills, gradients, image fills, strokes, radii, effects, text styles and runs,
-   vector paths, masks and prototype interactions. It also downloads the original image fills (`public/figma/i`).
-   Static mockup layers are exported as 2x renders (`public/figma/r`). The raw API responses are cached in `figma-cache/`
-   (git-ignored). `npm run figma:compile` recompiles from that cache.
-2. **`src/figma/Node.tsx`** renders the compiled tree as absolutely positioned DOM and SVG, so every layer sits exactly
-   where Figma puts it.
-3. **`src/figma/animate.ts` + `useAnimatedTree.ts`** implement Smart Animate. Layers are matched by name within their parent.
-   Position, rotation, size, opacity, fills, strokes, radii, effects and text styles are interpolated, and layers present on only
-   one side fade. Easing uses Figma's spring curves (closed-form damped spring) or its bezier presets.
-4. **`src/figma/Interactive.tsx`** runs the prototype triggers: `ON_HOVER`, `MOUSE_ENTER`/`MOUSE_LEAVE` chains and
-   `ON_CLICK`. `src/app/Screen.tsx` runs the `AFTER_TIMEOUT` entry animation of each project screen.
+1. **`scripts/figma/sync.mjs`** reads the three sections and every reachable component variant through the Figma REST API
+   (`npm run figma:sync`, token in `FIGMA_TOKEN`). It compiles each screen into `public/figma/s/<id>.json` (loaded on
+   demand) and an index in `src/figma/scene.json` (screen → breakpoint and route, component variants, scroll anchors,
+   images, rasters). Geometry, fills, gradients, image fills, strokes, radii, effects, text styles and runs, vector paths,
+   masks, constraints, scroll behaviour (fixed / sticky) and prototype interactions are kept. Image fills go to
+   `public/figma/i`, Figma renders of layers that need them to `public/figma/r`. The raw API responses are cached in
+   `figma-cache/` (git-ignored); `npm run figma:compile` recompiles from that cache.
+2. **`src/figma/Node.tsx`** renders the compiled tree as absolutely positioned DOM and SVG.
+3. **`src/figma/animate.ts` + `useAnimatedTree.ts`** implement Smart Animate (layers matched by name within their parent;
+   position, size, opacity, fills, strokes, radii, effects and text interpolated; Figma spring curves or bezier presets).
+4. **`src/figma/Interactive.tsx`** runs the triggers: hover, mouse enter/leave, click (navigate, scroll-to, URL) and the
+   after-delay variant changes (home headline). **`src/app/Page.tsx`** plays a route's after-delay chain
+   (entry state → … → end state), keeps fixed layers (sidebar, header, dock, project navigation) pinned to the window edge
+   their constraint names, and **`src/app/App.tsx`** plays the "dissolve" page transitions.
+5. **`src/components/Contents.tsx`**: the desktop case-study contents is a sticky layer. It scrolls with the page until it
+   reaches the project navigation bar, then stays, within its column. The row of the section being read (the last section
+   whose heading passed 35 % of the window height) gets the design's active style (row 01's), the others the idle style.
 
-## Routes / screens
+## Routes
 
-| Route | Figma frame |
+Routes come from the Figma screen names; every route exists on all three breakpoints.
+
+| Route | Screen |
 | --- | --- |
-| `#/` | home `725:6687` |
-| `#/creative-suite` | cs `725:5151` |
-| `#/professional-interests` | pi `725:5196` |
-| `#/projects/bettair` | p01 `725:5209` → `725:5245` |
-| `#/projects/mywarranty` | p02 `725:5281` → `725:5984` |
-| `#/projects/szimpatika` | p03 `725:6941` → `725:7643` |
-| `#/projects/forecastify` | p04 `725:6871` → `725:6906` |
-| `#/projects/clema` | p05 `725:8345` → `725:9010` |
+| `#/` | home |
+| `#/creative-suite` | cs |
+| `#/professional-interests` | pi |
+| `#/projects/eletesemeny`, `forecastify`, `leier`, `szimpatika`, `problem-register`, `bettair` | case-01 … case-06 (entry → end state) |
 
 ## Components (`src/components`)
 
 Semantic wrappers, chosen by Figma component set, that render the Figma layers inside the right HTML element:
 
-- `Navigation`: `<nav>` for the sidebar menu. `NavItem`: menu links with `aria-current`.
-- `BrandName`: the name and logo block (hover colour cycle).
-- `ContactBlock` (`<address>`) and `ContactLink`: the `mailto:` row.
-- `ProjectArrow` and `ProjectTag`: project navigation.
-- `CtaButton`: the Home calls to action.
-- `ToolCard` and `InterestCard`: focusable `<article>` cards; keyboard focus plays the hover state.
-
-## Interactions (values from the prototype)
-
-| Element | Trigger | Transition |
-| --- | --- | --- |
-| BettAir, mywarranty, Szimpatika entry | after 60 ms | Smart Animate, Gentle, 1022 / 1278 / 1022 ms |
-| Forecastify entry | after 60 ms | spring m 1, k 193.4, c 10.91, 1331 ms |
-| CLEMA entry | after 1 ms | spring m 1, k 27.22, c 8.571, 1820 ms |
-| Project arrows, tags | hover | Gentle, 1022 ms |
-| Sidebar items, name/logo, tool cards, interest cards | hover / enter / leave | Gentle, 1789 ms |
-| Home CTAs | hover | Gentle, 1022 ms |
-| Arrows | click | instant, cyclic p01 ↔ p05 |
-| E-mail row, "Get in touch" | click | `mailto:horvath.bertalan.andras@gmail.com` |
+- `Navigation` / `NavItem`: `<nav>` for the desktop sidebar and the tablet / mobile dock, links with `aria-current`.
+- `StickyLayer`: the sticky contents with its scrollspy and row buttons.
+- `ContactBlock` (`<address>`), `ToolCard` and `InterestCard` (focusable `<article>`; focus plays the hover state).
+- Every layer with a click action renders as `<a href>` (navigate, URL) or `<button>` (scroll-to); large text gets heading roles.
 
 ## Known, documented deviations
 
-- **Clicks without a destination.** In Figma, the sidebar items, the project tags and the "Explore projects" button have an
-  `ON_CLICK → NAVIGATE` action with an empty destination. They link to the screen they name: Home / BettAir / Creative Suite /
-  Professional interests, the matching project, and the first project.
-- **The active BettAir tag's `MOUSE_LEAVE` (ease-out, 300 ms)** has no destination in Figma, so it produces no visual change.
-- **The two embedded buttons in the Szimpatika mockup** swap on hover (dissolve, 200 ms) to variant `7:19195` of a remote library.
-  That variant is not part of this file and the REST API cannot return it, so the hover is not reproduced.
-- **Mockup content** whose layers are identical in both animation states is drawn from Figma's own 2x renders, and so are
-  image fills with filters. These layers use fonts that are not available for the web (SF Pro, Gotham, Brandon Text,
-  Mattone, Font Awesome 5 Pro), plus masks, blend modes and image filters. Layers that move during an entry animation stay
-  separate and animate individually.
-- **The "Gentle" preset** is Figma's spring (mass 1, stiffness 100, damping 15). Its natural length is 1022 ms; longer durations
-  (1789 ms) play the same curve more slowly.
-- **Text baseline.** Chrome and Figma place glyphs in a line box slightly differently. A per-font offset (Poppins +0.75 px,
-  Inter +0.5 px), measured with `scripts/verify/calibrate.mjs`, aligns them. Figma's "auto" line height renders as whole pixels,
-  which the compiler reproduces.
-- **Pointer events.** Only layers with interactions receive the pointer. In Figma the transparent mockup groups lie above the project
-  tags; letting them catch the pointer would make the tags unusable.
-- **Smaller viewports** scale the whole artboard proportionally; the geometry is unchanged.
+- **Contents rows are clickable.** In Figma they have no action; here a click scrolls to the section (same 600 ms
+  ease-in-out as the hero's "Read" link). Sticky layers stop under the fixed bars at the top of the window.
+- **Fixed layers** with a bottom constraint (tablet / mobile dock) are pinned to the bottom of the window, not of the
+  artboard; scaling is capped at 1.25 so the tablet and mobile designs do not grow without bound on wider windows.
+- **Masks.** A mask clips the layers above it up to the next mask, which starts its own mask group (as in Figma).
+- **Remote-library variants** (buttons embedded in some mockups) are not returned by the REST API, so their hover is
+  not reproduced.
+- **Mockup content** in fonts not available on the web (SF Pro, Gotham, Mattone, …) and image fills with filters are
+  drawn from Figma's own renders.
+- **The home hero** plays the ripple loop video (`public/media`) under its 60 % `#2D2D34` layer; the Figma image is its
+  still frame.
+- **Text baseline.** A per-font offset (Poppins +0.75 px, Inter +0.5 px), measured with `scripts/verify/calibrate.mjs`,
+  aligns Chrome's glyph placement with Figma's.
+- **Pointer events.** Only layers with interactions receive the pointer, so transparent mockup groups do not block links.
 
 ## Verification
 
 ```sh
 npm run build
-npm run verify                          # screenshots of every state + diff against Figma renders
-node scripts/verify/animation.mjs       # intermediate entry-animation frames, console errors, cyclic navigation
+npm run verify [desktop|tablet|mobile] # screenshots of every route + diff against Figma renders
+node scripts/verify/animation.mjs       # entry-animation frames, sticky contents check, console errors
 node scripts/verify/offsets.mjs home x,y,w,h …   # best pixel alignment of a region
 ```
 

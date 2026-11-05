@@ -13,8 +13,11 @@
     "verify": "node scripts/verify/screenshots.mjs"
   },
   "dependencies": {
+    "@fontsource/caveat": "^5.3.0",
     "@fontsource/inter": "^5.3.0",
+    "@fontsource/open-sans": "^5.3.0",
     "@fontsource/poppins": "^5.3.0",
+    "@fontsource/roboto": "^5.3.0",
     "@fontsource/roboto-mono": "^5.3.0",
     "@fontsource/space-mono": "^5.3.0",
     "react": "^18.3.1",

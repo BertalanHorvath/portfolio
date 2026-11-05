@@ -7,7 +7,8 @@
  *      X-Figma-Token header to api.figma.com requests)
  *   node scripts/figma/sync.mjs --compile-only              recompile from the cached raw JSON
  *
- * Reads the DESIGN section of the Portfolio_2026 file through the Figma REST API, and writes
+ * Reads the DESKTOP, TABLET and MOBILE sections of the Portfolio_2026 file through the Figma
+ * REST API, and writes
  *   src/figma/scene.json      compact node trees for every screen and every variant that a
  *                             prototype interaction can swap to (geometry, paints, effects,
  *                             text styles, vector paths, interactions)
@@ -25,28 +26,33 @@ const CACHE = path.join(ROOT, 'figma-cache');
 const OUT_SCENE = path.join(ROOT, 'src/figma/scene.json');
 const OUT_IMG = path.join(ROOT, 'public/figma/i');
 const OUT_RASTER = path.join(ROOT, 'public/figma/r');
+const OUT_SCREENS = path.join(ROOT, 'public/figma/s');
 
 const FILE_KEY = 'x2wdn04Y2Cfls5cy54JwU6';
-const DESIGN_ID = '725:5150';
 const RASTER_SCALE = 2;
 
-/** Screens of the prototype (frame id → route key). */
-const SCREENS = {
-  '725:6687': 'home',
-  '725:5151': 'cs',
-  '725:5196': 'pi',
-  '725:5209': 'p01', '725:5245': 'p01-end',
-  '725:5281': 'p02', '725:5984': 'p02-end',
-  '725:6941': 'p03', '725:7643': 'p03-end',
-  '725:6871': 'p04', '725:6906': 'p04-end',
-  '725:8345': 'p05', '725:9010': 'p05-end',
-};
-const PROJECT_PAIRS = [
-  ['725:5209', '725:5245'], ['725:5281', '725:5984'], ['725:6941', '725:7643'],
-  ['725:6871', '725:6906'], ['725:8345', '725:9010'],
+/** One Figma section per breakpoint; every top-level frame in it is a screen. */
+const SECTIONS = [
+  { id: '725:5150', bp: 'desktop' },
+  { id: '1394:17140', bp: 'tablet' },
+  { id: '1366:11860', bp: 'mobile' },
 ];
+
+/** Screen name → route key ("case-04 Szimpatika · tablet" → "projects/szimpatika"). */
+function routeKey(name) {
+  const base = name.replace(/\s*·\s*(tablet|mobile)\s*$/i, '').trim();
+  if (base === 'home') return '';
+  if (base === 'cs' || base === 'tools') return 'creative-suite';
+  if (base === 'pi' || base === 'interests') return 'professional-interests';
+  const m = /^case-(\d+)\s+(.+)$/.exec(base);
+  if (m) {
+    const slug = m[2].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return `projects/${slug}`;
+  }
+  return null;
+}
 /** Fonts the site ships. Text set in anything else is rendered from a Figma export. */
-const WEB_FONTS = new Set(['Poppins', 'Inter', 'Space Mono', 'Roboto Mono']);
+const WEB_FONTS = new Set(['Poppins', 'Inter', 'Space Mono', 'Roboto Mono', 'Roboto', 'Open Sans', 'Caveat']);
 const VECTOR_TYPES = new Set(['VECTOR', 'BOOLEAN_OPERATION', 'LINE', 'STAR', 'REGULAR_POLYGON']);
 
 const args = new Set(process.argv.slice(2));
@@ -119,9 +125,6 @@ const rm = (m) => m.map(r4);
 // ---------------------------------------------------------------------------------------------
 
 async function main() {
-  const design = await cached('design.json', () => api(`files/${FILE_KEY}/nodes?ids=${DESIGN_ID}&geometry=paths`));
-  const doc = design.nodes[DESIGN_ID].document;
-
   const index = new Map();
   const parentOf = new Map();
   const walkIndex = (n, p) => {
@@ -129,10 +132,25 @@ async function main() {
     if (p) parentOf.set(n.id, p);
     for (const c of n.children || []) walkIndex(c, n);
   };
-  walkIndex(doc, null);
+  const components = {};
+  const componentSets = {};
+  const SCREENS = {}; // frame id → { bp, route, name }
+  for (const sec of SECTIONS) {
+    const data = await cached(`sec-${sec.id.replace(':', '_')}.json`, () => api(`files/${FILE_KEY}/nodes?ids=${sec.id}&geometry=paths`));
+    const node = data.nodes[sec.id];
+    Object.assign(components, node.components);
+    Object.assign(componentSets, node.componentSets);
+    walkIndex(node.document, null);
+    for (const f of node.document.children) {
+      if (f.type !== 'FRAME' || f.visible === false) continue;
+      const route = routeKey(f.name);
+      if (route == null) continue;
+      SCREENS[f.id] = { bp: sec.bp, route, name: f.name };
+    }
+  }
 
   // Variants reachable through CHANGE_TO interactions (transitively).
-  const compSetIds = Object.keys(design.nodes[DESIGN_ID].componentSets);
+  const compSetIds = Object.keys(componentSets);
   const comps = await cached('components.json', () =>
     api(`files/${FILE_KEY}/nodes?ids=${compSetIds.join(',')}&geometry=paths`));
   for (const v of Object.values(comps.nodes)) if (v) walkIndex(v.document, null);
@@ -194,6 +212,12 @@ async function main() {
   const keepHidden = new Set();     // hidden nodes that become visible during an animation
   const forceDom = new Set();       // nodes that must stay DOM because they change
 
+  const PROJECT_PAIRS = [];
+  for (const id of Object.keys(SCREENS)) {
+    for (const it of index.get(id).interactions || []) for (const a of it.actions || []) {
+      if (it.trigger?.type === 'AFTER_TIMEOUT' && a?.navigation === 'NAVIGATE' && SCREENS[a.destinationId]) PROJECT_PAIRS.push([id, a.destinationId]);
+    }
+  }
   for (const [aId, bId] of PROJECT_PAIRS) {
     const A = pathMap(index.get(aId));
     const B = pathMap(index.get(bId));
@@ -318,9 +342,9 @@ async function main() {
     return o;
   };
 
-  const componentName = (id) => design.nodes[DESIGN_ID].components[id]?.name;
+  const componentName = (id) => components[id]?.name;
   const instancesOf = new Map(); // componentId → set id, for semantic wrappers
-  for (const [cid, c] of Object.entries(design.nodes[DESIGN_ID].components)) instancesOf.set(cid, c.componentSetId);
+  for (const [cid, c] of Object.entries(components)) instancesOf.set(cid, c.componentSetId);
 
   const interactionsOf = (n) => {
     const out = [];
@@ -337,6 +361,7 @@ async function main() {
         out.push({
           on: tr.type, delay: tr.delay ?? tr.timeout,
           do: a.type === 'URL' ? 'URL' : a.navigation, to: a.destinationId ?? undefined, url: a.url,
+          ...(a.navigation === 'SCROLL_TO' ? { anchor: 1 } : {}),
           tr: trans,
         });
       }
@@ -466,6 +491,57 @@ async function main() {
     return b && { x: b.x0, y: b.y0, width: b.x1 - b.x0, height: b.y1 - b.y0 };
   };
 
+  const screenOf = (n) => {
+    let cur = n;
+    while (cur && !SCREENS[cur.id]) cur = parentOf.get(cur.id);
+    return cur;
+  };
+  const absY = (n, scr) => n.absoluteBoundingBox.y - scr.absoluteBoundingBox.y;
+  const norm = (t) => (t || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+  /**
+   * Table of contents of a case study: every "toc/NN" row, the section it points to (the text
+   * layer outside the contents block that carries the same label, else the NN-th block of the
+   * article), and the active / idle styling taken from the design (row 01 is drawn active).
+   */
+  const tocOf = (contents, scr) => {
+    const rows = [];
+    const findRows = (x) => {
+      if (/^toc\/\d+$/.test(x.name) && x.visible !== false) rows.push(x);
+      else for (const c of x.children || []) findRows(c);
+    };
+    findRows(contents);
+    if (rows.length < 2) return undefined;
+    const inside = new Set();
+    const mark = (x) => { inside.add(x.id); for (const c of x.children || []) mark(c); };
+    mark(contents);
+    const texts = [];
+    const collectTexts = (x) => {
+      if (x.visible === false || inside.has(x.id)) return;
+      if (x.type === 'TEXT') texts.push(x);
+      for (const c of x.children || []) collectTexts(c);
+    };
+    collectTexts(scr);
+    const labelOf = (row) => (row.children || []).filter((c) => c.type === 'TEXT').map((c) => c.characters).slice(-1)[0];
+    const items = rows.map((row) => {
+      const label = labelOf(row);
+      const bare = (t) => norm(t).replace(/^\d+\s*[·.\-–]\s*/, '');
+      const num = (row.children || []).find((c) => c.type === 'TEXT')?.characters.trim();
+      const numbered = new RegExp(`^${num}\\s*[·.]`);
+      const hit = texts.find((t) => norm(t.characters) === norm(label)) ??
+        texts.find((t) => bare(t.characters) === norm(label)) ??
+        texts.find((t) => numbered.test(t.characters.trim())); // e.g. "08 · TAKEAWAY"
+      return { id: row.id, label, target: hit ? r4(absY(hit, scr)) : null };
+    });
+    if (items.some((it) => it.target == null)) warnings.add(`toc of ${scr.name}: ${items.filter((i) => i.target == null).map((i) => i.label).join(' | ')} not found`);
+    const style = (row) => ({
+      s: paints(row.strokes),
+      kids: (row.children || []).map((c) => (c.type === 'TEXT' ? { fill: paints(c.fills) } : { f: paints(c.fills) })),
+      f: paints(row.fills),
+    });
+    return { items, active: style(rows[0]), idle: style(rows[1]) };
+  };
+
   const compile = (n, root, isRoot = false) => {
     if (n.visible === false && !keepHidden.has(n.id)) return null;
     const o = {
@@ -483,6 +559,18 @@ async function main() {
     if (n.type === 'COMPONENT') { o.cid = n.id; o.cs = instancesOf.get(n.id); o.cn = n.name; }
     const ix = interactionsOf(n);
     if (ix) o.ix = ix;
+    if (n.scrollBehavior === 'FIXED') {
+      o.sb = 'F';
+      o.cv = n.constraints?.vertical;
+    } else if (n.scrollBehavior === 'STICKY_SCROLLS' && n.visible !== false && !isRoot) {
+      o.sb = 'S';
+      const scr = screenOf(n), par = parentOf.get(n.id);
+      const top = n.absoluteBoundingBox.y - scr.absoluteBoundingBox.y;
+      const parBottom = par.absoluteBoundingBox.y + par.absoluteBoundingBox.height - scr.absoluteBoundingBox.y;
+      o.st = { y0: r4(top), max: r4(Math.max(0, parBottom - top - n.size.y)) };
+      const toc = tocOf(n, scr);
+      if (toc) o.toc = toc;
+    }
 
     const raster = rasterIds.get(n.id) ?? (!forceDom.has(n.id) && needsRasterAlone(n) ? n.id : undefined);
     if (raster) {
@@ -568,8 +656,21 @@ async function main() {
   };
 
   const exportInfo = new Map();
-  const scene = { screens: {}, variants: {}, routes: SCREENS, images: {}, rasters: {} };
-  for (const id of Object.keys(SCREENS)) scene.screens[id] = compile(index.get(id), index.get(id), true);
+  const scene = { screens: {}, variants: {}, meta: SCREENS, anchors: {}, images: {}, rasters: {} };
+  for (const id of Object.keys(SCREENS)) {
+    scene.screens[id] = compile(index.get(id), index.get(id), true);
+    SCREENS[id].h = r4(index.get(id).size.y);
+    SCREENS[id].w = r4(index.get(id).size.x);
+  }
+  // Scroll targets of SCROLL_TO interactions, as offsets from the top of their screen.
+  const addAnchors = (n) => {
+    for (const it of n.ix || []) if (it.do === 'SCROLL_TO' && it.to && index.get(it.to)) {
+      const t = index.get(it.to), scr = screenOf(t);
+      if (scr) scene.anchors[it.to] = r4(absY(t, scr));
+    }
+    for (const c of n.c || []) addAnchors(c);
+  };
+  for (const n of Object.values(scene.screens)) addAnchors(n);
   for (const id of variantIds) scene.variants[id] = compile(index.get(id), index.get(id), true);
 
   const rasterList = [...new Set(collectRasters(scene))];
@@ -632,10 +733,23 @@ async function main() {
   };
   for (const n of [...Object.values(scene.screens), ...Object.values(scene.variants)]) resolve(n);
   scene.rasterScale = RASTER_SCALE;
+  // Drop downloads no screen uses any more.
+  for (const f of fs.readdirSync(OUT_IMG)) if (!imageRefs.has(f.replace(/\..*$/, ''))) fs.rmSync(path.join(OUT_IMG, f));
+  const usedR = new Set(rasterList.map(fileName));
+  for (const f of fs.readdirSync(OUT_RASTER)) if (!usedR.has(f.replace(/\..*$/, ''))) fs.rmSync(path.join(OUT_RASTER, f));
 
+  // Screens are large (a case study is up to ~900 kB): each goes to its own file, fetched when
+  // its page opens. The bundled index keeps everything else.
+  fs.rmSync(OUT_SCREENS, { recursive: true, force: true });
+  fs.mkdirSync(OUT_SCREENS, { recursive: true });
+  for (const [id, n] of Object.entries(scene.screens)) {
+    fs.writeFileSync(path.join(OUT_SCREENS, `${fileName(id)}.json`), JSON.stringify(n));
+    scene.meta[id].file = `figma/s/${fileName(id)}.json`;
+  }
+  delete scene.screens;
   fs.mkdirSync(path.dirname(OUT_SCENE), { recursive: true });
   fs.writeFileSync(OUT_SCENE, JSON.stringify(scene));
-  console.log(`wrote ${path.relative(ROOT, OUT_SCENE)} (${(fs.statSync(OUT_SCENE).size / 1024).toFixed(0)} kB)`);
+  console.log(`wrote ${path.relative(ROOT, OUT_SCENE)} (${(fs.statSync(OUT_SCENE).size / 1024).toFixed(0)} kB) and ${Object.keys(scene.meta).length} screens`);
 }
 
 /** Leaf nodes that render faithfully (and sharper) as DOM: plain image / solid rectangles. */
