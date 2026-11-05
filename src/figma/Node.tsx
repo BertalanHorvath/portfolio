@@ -202,7 +202,7 @@ const GLYPHS: Record<string, (fs: number) => ReactNode> = {
     <svg width={fs * 0.88} height={fs * 0.88} viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
       <path d="M13.6 3.15A9 9 0 1 0 20.9 13.6" />
-      <path d="M17.7 11.4l3.2 2.3 2.3-3.3" />
+      <path d="M17.7 15.8l3.2-2.2 2.3 3.2" />
     </svg>
   ),
 };
@@ -354,6 +354,7 @@ export function nodeOuterStyle(n: FNode): CSSProperties {
   if (n.r) op = op / (n.r.o0 || 1); // the export already contains the node's own opacity
   if (n.hid) op = 0;
   if (op !== 1) style.opacity = Math.max(0, Math.min(1, op));
+  if (n.zt) style.zIndex = 1;
   const filters: string[] = [];
   const lb = n.fx?.find((e) => e.t === 'LB');
   if (lb && !n.r) filters.push(blurCss(lb.r));

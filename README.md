@@ -70,8 +70,10 @@ Semantic wrappers, chosen by Figma component set, that render the Figma layers i
   the left edge, bars that reach the design's right edge (project navigation, tablet / mobile header) stretch to the window
   edge, and the rest is centred in the remaining width. The screen frame's own 1 px border and 12 px corner radius are
   not drawn, as they would frame the window.
-- **Digital Citizenship hero mockup** (desktop) sits 76 px lower than in Figma: its top reached under the fixed project
-  bar, which cut it off (`NUDGES` in `src/app/Page.tsx`).
+- **Digital Citizenship hero mockup** (desktop) sits 38 px lower than in Figma and above the hero's border: its top reached
+  under the fixed project bar, which cut it off, and the hero's border crossed it (`NUDGES` in `src/app/Page.tsx`).
+- **Frosted top bars** (desktop project navigation) are clear at the very top of the page and frost over the first 40 px
+  of scrolling (`FrostedBar`), so nothing reaching up behind them is cut off before the page scrolls.
 - **Scaled instances** (the home headline on tablet and mobile is a scaled copy of the desktop component) keep their scale
   when their after-delay animation swaps the variant, as in Figma.
 - **The ⟳ glyph** of the "restart case studies" button is not in Poppins; it is drawn as an SVG traced from Figma's render,

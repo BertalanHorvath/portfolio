@@ -73,10 +73,11 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
 /**
  * Layers moved from their Figma position (documented in the README): the Digital Citizenship hero
  * mockup reaches above the hero, under the fixed project bar, which cut its top off. It moves down
- * just enough to start below the bar (bar bottom 80, mockup top 5 in its end state).
+ * part of the way (the bar is also clear at the top of the page, see FrostedBar), and is drawn
+ * above the hero's border, which would otherwise cross it.
  */
 const NUDGES: { bp: Breakpoint; route: string; layer: string; dy: number }[] = [
-  { bp: 'desktop', route: 'projects/eletesemeny', layer: 'Group 1171275454', dy: 76 },
+  { bp: 'desktop', route: 'projects/eletesemeny', layer: 'Group 1171275454', dy: 38 },
 ];
 
 function nudge(n: FNode, bp: Breakpoint, route: string): FNode {
@@ -84,7 +85,7 @@ function nudge(n: FNode, bp: Breakpoint, route: string): FNode {
   if (!list.length) return n;
   const walk = (x: FNode): FNode => {
     const hit = list.find((l) => l.layer === x.n);
-    if (hit) return { ...x, m: [x.m[0], x.m[1], x.m[2], x.m[3], x.m[4], x.m[5] + hit.dy] };
+    if (hit) return { ...x, zt: 1, m: [x.m[0], x.m[1], x.m[2], x.m[3], x.m[4], x.m[5] + hit.dy] };
     return x.c ? { ...x, c: x.c.map(walk) } : x;
   };
   return walk(n);

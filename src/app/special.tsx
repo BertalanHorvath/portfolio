@@ -6,6 +6,7 @@ import { NavItem, Navigation } from '../components/Navigation';
 import { ContactBlock } from '../components/ContactBlock';
 import { InterestCard, ToolCard } from '../components/Cards';
 import { StickyLayer } from '../components/Contents';
+import { FrostedBar } from '../components/FrostedBar';
 
 /** Figma component sets (ids from the file) → semantic React components. */
 const SETS = {
@@ -31,6 +32,7 @@ export function renderSpecial(n: FNode): ReactNode | undefined {
     if (n.cs && SETS.pi.includes(n.cs)) return <InterestCard node={n} />;
     if (n.cid === CONTACTS_COMPONENT) return <ContactBlock node={n} />;
   }
+  if (n.sb === 'F' && n.cv !== 'BOTTOM' && n.f?.length && n.fx?.some((e) => e.t === 'BB')) return <FrostedBar node={n} />;
   if (n.ix?.length) return <Interactive node={n} />;
   if (n.t === 'TEXT' && (n.ts?.fs ?? 0) >= 28 && !n.r) {
     // Display-size text titles its screen or section.

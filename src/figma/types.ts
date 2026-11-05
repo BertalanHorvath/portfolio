@@ -102,6 +102,8 @@ export interface FNode {
   st?: { x0: number; y0: number; max: number };
   /** table of contents rows of a case study and their target offsets in the screen */
   toc?: Toc;
+  /** drawn above its parent's stroke (Figma draws frame strokes over the content) */
+  zt?: 1;
 }
 
 export interface RowStyle {
