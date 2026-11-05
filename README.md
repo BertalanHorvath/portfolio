@@ -5,7 +5,7 @@ interactions and Smart Animate transitions. Three designs, one per breakpoint:
 
 | Window width | Design | Figma section | Scale |
 | --- | --- | --- | --- |
-| ≥ 1200 px | desktop, 1442 wide | `725:5150` | `min(width / 1442, height / 962)` |
+| ≥ 1200 px | desktop, 1442 wide | `725:5150` | `min(width / 1442, height / 962)`; wider windows are filled (see below) |
 | 600–1199 px | tablet, 810 wide | `1394:17140` | `min(width / 810, 1.25)`, centred |
 | < 600 px | mobile, 390 wide | `1366:11860` | `min(width / 390, 1.25)`, centred |
 
@@ -66,6 +66,10 @@ Semantic wrappers, chosen by Figma component set, that render the Figma layers i
   artboard; scaling is capped at 1.25 so the tablet and mobile designs do not grow without bound on wider windows.
 - **Variant swaps keep text overrides** (e.g. the project navigation buttons' hover state shows the project name, not the
   component's default "Label"), and the instance's layout, as Figma does.
+- **Windows wider than the scaled design** are filled instead of showing a centred artboard: the desktop sidebar stays at
+  the left edge, bars that reach the design's right edge (project navigation, tablet / mobile header) stretch to the window
+  edge, and the rest is centred in the remaining width. The screen frame's own 1 px border and 12 px corner radius are
+  not drawn, as they would frame the window.
 - **Masks.** A mask clips the layers above it up to the next mask, which starts its own mask group (as in Figma).
 - **Remote-library variants** (buttons embedded in some mockups) are not returned by the REST API, so their hover is
   not reproduced.

@@ -47,6 +47,29 @@ function orderChain(ids: string[], trees: Record<string, FNode>) {
   return out;
 }
 
+/** Width of the desktop sidebar column, which stays at the left edge of wide windows. */
+const SIDEBAR_W = 300;
+
+const shiftX = (n: FNode, dx: number): FNode =>
+  dx ? { ...n, m: [n.m[0], n.m[1], n.m[2], n.m[3], n.m[4] + dx, n.m[5]] } : n;
+
+/**
+ * Lays a top-level layer out on a window wider than the design (w0 → w): the desktop sidebar keeps
+ * to the left edge, bars that reach the right edge of the design (project navigation, headers)
+ * stretch to the window's right edge with their contents centred, and everything else is centred
+ * in the remaining width.
+ */
+function widen(n: FNode, w0: number, w: number, side: number): FNode {
+  const extra = w - w0;
+  if (extra <= 0.5) return n;
+  const x = n.m[4], right = x + n.w;
+  if (side && right <= side + 1) return n;
+  if (n.f?.length && !n.fg && right >= w0 - 1 && n.w >= (w0 - side) * 0.7) {
+    return { ...n, w: n.w + extra, c: n.c?.map((c) => shiftX(c, extra / 2)) };
+  }
+  return shiftX(n, extra / 2);
+}
+
 export function Page({ bp, route, vw, vh }: { bp: Breakpoint; route: string; vw: number; vh: number }) {
   const ids = useMemo(
     () => Object.keys(scene.meta).filter((id) => scene.meta[id].bp === bp && scene.meta[id].route === route),
@@ -91,13 +114,17 @@ function PlayedPage({ chain, trees, bp, vw, vh }: { chain: string[]; trees: Reco
   }, [chain, trees, start, set, animateTo]);
 
   const meta = scene.meta[chain[0]];
-  const W = meta.w, H = meta.h;
-  const s = scaleFor(bp, W, vw, vh);
+  const H = meta.h;
+  const s = scaleFor(bp, meta.w, vw, vh);
   const viewH = vh / s;
+  // Windows wider than the scaled design: the page still fills them (see widen()).
+  const W = Math.max(meta.w, vw / s);
+  const dx = (W - meta.w) / 2;
 
-  const kids = tree.c || [];
+  const kids = (tree.c || []).map((c) => widen(c, meta.w, W, bp === 'desktop' ? SIDEBAR_W : 0));
   const fixed = kids.filter((c) => c.sb === 'F');
-  const scrolling = { ...tree, c: kids.filter((c) => c.sb !== 'F') };
+  // The screen frame's own border and corner radius would draw a frame at the window edge: dropped.
+  const scrolling = { ...tree, w: W, s: undefined, rr: undefined, c: kids.filter((c) => c.sb !== 'F') };
   // Sticky layers stop under the fixed bars at the top (not under a full-height sidebar).
   const stickTop = Math.max(0, ...fixed.filter((f) => f.cv !== 'BOTTOM' && f.h < viewH / 2).map((f) => f.m[5] + f.h));
   // Fixed layers keep their distance to the window edge their constraint pins them to.
@@ -106,7 +133,7 @@ function PlayedPage({ chain, trees, bp, vw, vh }: { chain: string[]; trees: Reco
     return dy ? { ...f, m: [f.m[0], f.m[1], f.m[2], f.m[3], f.m[4], f.m[5] + dy] } : f;
   };
   const [stickySlot, setStickySlot] = useState<HTMLElement | null>(null);
-  const geometry = useMemo(() => ({ scale: s, viewH, stickTop, stickySlot }), [s, viewH, stickTop, stickySlot]);
+  const geometry = useMemo(() => ({ scale: s, viewH, stickTop, stickySlot, dx }), [s, viewH, stickTop, stickySlot, dx]);
 
   return (
     <PageContext.Provider value={geometry}>

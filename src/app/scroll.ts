@@ -11,8 +11,10 @@ export interface PageGeometry {
   stickTop: number;
   /** element in the fixed layer that holds sticky layers while they are stuck */
   stickySlot: HTMLElement | null;
+  /** horizontal shift (design px) of the centred content on windows wider than the design */
+  dx: number;
 }
-export const PageContext = createContext<PageGeometry>({ scale: 1, viewH: 962, stickTop: 0, stickySlot: null });
+export const PageContext = createContext<PageGeometry>({ scale: 1, viewH: 962, stickTop: 0, stickySlot: null, dx: 0 });
 export const usePage = () => useContext(PageContext);
 
 const subscribe = (cb: () => void) => {

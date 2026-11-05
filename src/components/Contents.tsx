@@ -53,7 +53,7 @@ function boxOf(root: FNode, id: string): { x: number; y: number; w: number; h: n
  * row of the section on screen gets the design's active style.
  */
 export function StickyLayer({ node }: { node: FNode }) {
-  const { scale, viewH, stickTop, stickySlot } = usePage();
+  const { scale, viewH, stickTop, stickySlot, dx } = usePage();
   const toc = node.toc;
   const y = useScrollY() / scale;
   const st = node.st!;
@@ -72,7 +72,7 @@ export function StickyLayer({ node }: { node: FNode }) {
   }
   const m = [...n.m] as FNode['m'];
   if (stuck) {
-    m[4] = st.x0;
+    m[4] = st.x0 + dx;
     m[5] = stickTop;
   } else if (off >= st.max) m[5] += st.max;
 
