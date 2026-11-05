@@ -9,11 +9,48 @@ import { useAnimatedTree } from './useAnimatedTree';
 import { navigate, routeOfScreen, href as routeHref } from '../app/routes';
 import { scrollToY, usePage } from '../app/scroll';
 
-/** A variant rendered in place of an instance keeps the instance's placement. */
+/** Text layers of a tree by name path. */
+function textsOf(n: FNode, path = '', out = new Map<string, FNode>()) {
+  for (const c of n.c || []) {
+    const p = `${path}/${c.n}`;
+    if (c.t === 'TEXT') out.set(p, c);
+    else textsOf(c, p, out);
+  }
+  return out;
+}
+
+/**
+ * Carries an instance's text overrides into a variant, as Figma does when it swaps variants: the
+ * overridden texts and, as the variant was laid out for its default text, the instance's geometry
+ * (sizes and positions of the layers both share).
+ */
+function withOverrides(base: FNode, v: FNode): FNode {
+  const def = base.cid ? scene.variants[base.cid] : undefined;
+  if (!def) return v;
+  const defTexts = textsOf(def);
+  const baseTexts = textsOf(base);
+  const overridden = [...baseTexts].some(([p, t]) => defTexts.has(p) && defTexts.get(p)!.tx !== t.tx);
+  if (!overridden) return v;
+  const merge = (b: FNode, x: FNode): FNode => {
+    const byName = new Map((b.c || []).map((c) => [c.n, c]));
+    const c = x.c?.map((k) => {
+      const bk = byName.get(k.n);
+      if (!bk) return k;
+      const m = merge(bk, k);
+      return k.t === 'TEXT' && bk.t === 'TEXT'
+        ? { ...m, tx: bk.tx, runs: bk.runs, ost: bk.runs ? bk.ost : k.ost, ar: bk.ar }
+        : m;
+    });
+    return { ...x, m: b.m, w: b.w, h: b.h, fg: b.fg ?? x.fg, sg: b.sg ?? x.sg, c };
+  };
+  return merge(base, v);
+}
+
+/** A variant rendered in place of an instance keeps the instance's placement and text overrides. */
 export function variantAt(base: FNode, variantId: string): FNode {
   const v = scene.variants[variantId];
   if (!v) return base;
-  return { ...v, i: base.i, m: base.m, ix: v.ix };
+  return { ...withOverrides(base, v), i: base.i, m: base.m, ix: v.ix };
 }
 
 const find = (n: FNode | undefined, on: string) => n?.ix?.find((x) => x.on === on);

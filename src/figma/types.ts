@@ -99,7 +99,7 @@ export interface FNode {
   sb?: 'F' | 'S';
   cv?: 'TOP' | 'BOTTOM' | 'CENTER' | 'TOP_BOTTOM' | 'SCALE';
   /** sticky: top offset in its screen and how far it can travel inside its parent */
-  st?: { y0: number; max: number };
+  st?: { x0: number; y0: number; max: number };
   /** table of contents rows of a case study and their target offsets in the screen */
   toc?: Toc;
 }

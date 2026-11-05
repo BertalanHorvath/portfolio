@@ -25,7 +25,7 @@ body {
   position: relative;
   display: block;
   margin: 0 auto;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .artboard {

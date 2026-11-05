@@ -9,8 +9,10 @@ export interface PageGeometry {
   viewH: number;
   /** bottom edge (design px) of the fixed bars at the top, under which sticky layers stop */
   stickTop: number;
+  /** element in the fixed layer that holds sticky layers while they are stuck */
+  stickySlot: HTMLElement | null;
 }
-export const PageContext = createContext<PageGeometry>({ scale: 1, viewH: 962, stickTop: 0 });
+export const PageContext = createContext<PageGeometry>({ scale: 1, viewH: 962, stickTop: 0, stickySlot: null });
 export const usePage = () => useContext(PageContext);
 
 const subscribe = (cb: () => void) => {

@@ -105,7 +105,8 @@ function PlayedPage({ chain, trees, bp, vw, vh }: { chain: string[]; trees: Reco
     const dy = f.cv === 'BOTTOM' ? viewH - H : f.cv === 'CENTER' ? (viewH - H) / 2 : 0;
     return dy ? { ...f, m: [f.m[0], f.m[1], f.m[2], f.m[3], f.m[4], f.m[5] + dy] } : f;
   };
-  const geometry = useMemo(() => ({ scale: s, viewH, stickTop }), [s, viewH, stickTop]);
+  const [stickySlot, setStickySlot] = useState<HTMLElement | null>(null);
+  const geometry = useMemo(() => ({ scale: s, viewH, stickTop, stickySlot }), [s, viewH, stickTop, stickySlot]);
 
   return (
     <PageContext.Provider value={geometry}>
@@ -115,13 +116,12 @@ function PlayedPage({ chain, trees, bp, vw, vh }: { chain: string[]; trees: Reco
             <Node n={scrolling} />
           </div>
         </main>
-        {fixed.length > 0 && (
-          <div className="fixed-layer" style={{ width: W * s }}>
-            <div className="artboard" style={{ width: W, height: viewH, transform: s === 1 ? undefined : `scale(${s})` }}>
-              {fixed.map((f) => <Node key={f.i} n={place(f)} />)}
-            </div>
+        <div className="fixed-layer" style={{ width: W * s }}>
+          <div className="artboard" style={{ width: W, height: viewH, transform: s === 1 ? undefined : `scale(${s})` }}>
+            <div ref={setStickySlot} />
+            {fixed.map((f) => <Node key={f.i} n={place(f)} />)}
           </div>
-        )}
+        </div>
       </HooksContext.Provider>
     </PageContext.Provider>
   );

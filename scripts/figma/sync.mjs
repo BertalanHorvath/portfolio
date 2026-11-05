@@ -567,7 +567,7 @@ async function main() {
       const scr = screenOf(n), par = parentOf.get(n.id);
       const top = n.absoluteBoundingBox.y - scr.absoluteBoundingBox.y;
       const parBottom = par.absoluteBoundingBox.y + par.absoluteBoundingBox.height - scr.absoluteBoundingBox.y;
-      o.st = { y0: r4(top), max: r4(Math.max(0, parBottom - top - n.size.y)) };
+      o.st = { x0: r4(n.absoluteBoundingBox.x - scr.absoluteBoundingBox.x), y0: r4(top), max: r4(Math.max(0, parBottom - top - n.size.y)) };
       const toc = tocOf(n, scr);
       if (toc) o.toc = toc;
     }

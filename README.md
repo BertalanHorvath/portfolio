@@ -34,7 +34,8 @@ The Figma file is the single source of truth. Nothing in the UI is re-drawn by h
    (entry state → … → end state), keeps fixed layers (sidebar, header, dock, project navigation) pinned to the window edge
    their constraint names, and **`src/app/App.tsx`** plays the "dissolve" page transitions.
 5. **`src/components/Contents.tsx`**: the desktop case-study contents is a sticky layer. It scrolls with the page until it
-   reaches the project navigation bar, then stays, within its column. The row of the section being read (the last section
+   reaches the project navigation bar, then stays, within its column (while stuck it sits in the fixed layer, so it does
+   not jitter during scrolling). The row of the section being read (the last section
    whose heading passed 35 % of the window height) gets the design's active style (row 01's), the others the idle style.
 
 ## Routes
@@ -63,6 +64,8 @@ Semantic wrappers, chosen by Figma component set, that render the Figma layers i
   ease-in-out as the hero's "Read" link). Sticky layers stop under the fixed bars at the top of the window.
 - **Fixed layers** with a bottom constraint (tablet / mobile dock) are pinned to the bottom of the window, not of the
   artboard; scaling is capped at 1.25 so the tablet and mobile designs do not grow without bound on wider windows.
+- **Variant swaps keep text overrides** (e.g. the project navigation buttons' hover state shows the project name, not the
+  component's default "Label"), and the instance's layout, as Figma does.
 - **Masks.** A mask clips the layers above it up to the next mask, which starts its own mask group (as in Figma).
 - **Remote-library variants** (buttons embedded in some mockups) are not returned by the REST API, so their hover is
   not reproduced.

@@ -132,6 +132,16 @@ function strokeLayer(n: FNode) {
   const out = n.sa === 'OUTSIDE' ? sw : n.sa === 'CENTER' ? sw / 2 : 0;
   const w = n.isw ?? [sw, sw, sw, sw];
   const br = radius(n.rr, out, n);
+  // Solid strokes on square boxes: a plain CSS border (crisp at any scale, no mask seams).
+  if (!n.rr && !n.sd && n.s.length === 1 && n.s[0].t === 'S') {
+    return (
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: px(-out), pointerEvents: 'none', boxSizing: 'border-box',
+        borderStyle: 'solid', borderColor: rgba(n.s[0].c),
+        borderWidth: `${px(w[0])} ${px(w[1])} ${px(w[2])} ${px(w[3])}`,
+      }} />
+    );
+  }
   // A padded box masked to its border area: works for gradients, radii and per-side weights.
   return n.s.map((p, k) => {
     let background: string | undefined;
@@ -306,7 +316,7 @@ export function NodeContent({ n }: { n: FNode }) {
         </div>
       )}
       {is && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: br, boxShadow: is }} />}
-      {kids && (n.clip ? <div style={{ position: 'absolute', inset: 0, borderRadius: br, overflow: 'hidden' }}>{kids}</div> : kids)}
+      {kids && (n.clip ? <div style={{ position: 'absolute', inset: 0, borderRadius: br, overflow: 'clip' }}>{kids}</div> : kids)}
       {strokeLayer(n)}
     </>
   );
