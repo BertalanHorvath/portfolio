@@ -71,21 +71,32 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
 }
 
 /**
- * Layers moved from their Figma position (documented in the README): the Digital Citizenship hero
- * mockup reaches above the hero, under the fixed project bar, which cut its top off. It moves down
- * part of the way (the bar is also clear at the top of the page, see FrostedBar), and is drawn
- * above the hero's border, which would otherwise cross it.
+ * Corrections to the design, applied to every state of a route (documented in the README):
+ * - the Digital Citizenship hero mockup reaches above the hero, under the fixed project bar, which
+ *   cut its top off. It moves down part of the way (the bar is also clear at the top of the page,
+ *   see FrostedBar) and is drawn above the hero's border, which would otherwise cross it.
+ * - the mobile Problem Register subtitle "for state institutions" has a 68 px line height on 36 px
+ *   text (a desktop value): its two lines drifted apart. It takes the title's 46 px line height.
  */
-const NUDGES: { bp: Breakpoint; route: string; layer: string; dy: number }[] = [
-  { bp: 'desktop', route: 'projects/eletesemeny', layer: 'Group 1171275454', dy: 38 },
+const ADJUSTMENTS: { bp: Breakpoint; route: string; match: (n: FNode) => boolean; patch: (n: FNode) => FNode }[] = [
+  {
+    bp: 'desktop', route: 'projects/eletesemeny',
+    match: (n) => n.n === 'Group 1171275454',
+    patch: (n) => ({ ...n, zt: 1, m: [n.m[0], n.m[1], n.m[2], n.m[3], n.m[4], n.m[5] + 38] }),
+  },
+  {
+    bp: 'mobile', route: 'projects/problem-register',
+    match: (n) => n.t === 'TEXT' && n.tx === 'for state institutions',
+    patch: (n) => ({ ...n, h: 92, ts: { ...n.ts, lh: 46 } }),
+  },
 ];
 
-function nudge(n: FNode, bp: Breakpoint, route: string): FNode {
-  const list = NUDGES.filter((x) => x.bp === bp && x.route === route);
+function adjust(n: FNode, bp: Breakpoint, route: string): FNode {
+  const list = ADJUSTMENTS.filter((x) => x.bp === bp && x.route === route);
   if (!list.length) return n;
   const walk = (x: FNode): FNode => {
-    const hit = list.find((l) => l.layer === x.n);
-    if (hit) return { ...x, zt: 1, m: [x.m[0], x.m[1], x.m[2], x.m[3], x.m[4], x.m[5] + hit.dy] };
+    const hit = list.find((l) => l.match(x));
+    if (hit) return hit.patch(x);
     return x.c ? { ...x, c: x.c.map(walk) } : x;
   };
   return walk(n);
@@ -101,13 +112,16 @@ export function Page({ bp, route, vw, vh }: { bp: Breakpoint; route: string; vw:
     let live = true;
     setTrees(null);
     Promise.all(ids.map((id) => loadScreen(id).then((n) => [id, n] as const))).then((pairs) => {
-      if (live) setTrees(Object.fromEntries(pairs.map(([id, n]) => [id, nudge(n, bp, route)])));
+      if (live) setTrees(Object.fromEntries(pairs.map(([id, n]) => [id, adjust(n, bp, route)])));
     });
     return () => { live = false; };
   }, [ids, bp, route]);
+  // Stable across re-renders (window resizes, e.g. a mobile browser's toolbar showing and hiding
+  // while scrolling): a new chain would restart the page's entry animation.
+  const chain = useMemo(() => (trees ? orderChain(ids, trees) : null), [ids, trees]);
   if (!ids.length) return <NotFound />;
-  if (!trees) return <div className="page-loading" aria-busy="true" />;
-  return <PlayedPage chain={orderChain(ids, trees)} trees={trees} bp={bp} vw={vw} vh={vh} />;
+  if (!trees || !chain) return <div className="page-loading" aria-busy="true" />;
+  return <PlayedPage chain={chain} trees={trees} bp={bp} vw={vw} vh={vh} />;
 }
 
 function PlayedPage({ chain, trees, bp, vw, vh }: { chain: string[]; trees: Record<string, FNode>; bp: Breakpoint; vw: number; vh: number }) {
