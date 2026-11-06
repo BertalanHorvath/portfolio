@@ -130,6 +130,25 @@ body {
   pointer-events: none;
 }
 
+/* Frames that scroll their content (Figma overflow scrolling) take the touch / wheel themselves. */
+.artboard .fx-scroll {
+  pointer-events: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.artboard .fx-snap {
+  scroll-snap-type: x mandatory;
+}
+
+.artboard .fx-snap > div > [data-node] {
+  scroll-snap-align: center;
+}
+
+.artboard .fx-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .artboard .fx-interactive {
   pointer-events: auto;
   cursor: default;

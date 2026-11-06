@@ -609,6 +609,8 @@ async function main() {
     if (n.rectangleCornerRadii) o.rr = n.rectangleCornerRadii;
     else if (n.cornerRadius) o.rr = n.cornerRadius;
     if (n.clipsContent) o.clip = 1;
+    // Prototype scrolling inside a frame (e.g. a swipeable carousel): H, V or B(oth).
+    if (n.overflowDirection && n.overflowDirection !== 'NONE') o.ov = n.overflowDirection === 'HORIZONTAL_SCROLLING' ? 'H' : n.overflowDirection === 'VERTICAL_SCROLLING' ? 'V' : 'B';
 
     if (n.type === 'TEXT') {
       o.tx = n.characters;

@@ -72,6 +72,9 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
 
 /**
  * Corrections to the design, applied to every state of a route (documented in the README):
+ * - the home status tag reads "Open to new roles".
+ * - the primary button ("Explore projects") is brand-coloured at rest too (white in the design),
+ *   and the case-study bar's "next" pill is filled the same way, at rest and on hover.
  * - the Digital Citizenship hero mockup reaches above the hero, under the fixed project bar, which
  *   cut its top off. It moves down part of the way (the bar is also clear at the top of the page,
  *   see FrostedBar) and is drawn above the hero's border, which would otherwise cross it.
@@ -80,14 +83,65 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
  *   and 36 px on tablet, as on desktop.
  */
 interface Adjustment {
-  bp: Breakpoint;
+  /** '*': every breakpoint / route */
+  bp: Breakpoint | '*';
   route: string;
   match?: (n: FNode) => boolean;
   patch?: (n: FNode) => FNode;
   /** remove `dy` px of vertical space at screen height `y` (layers below move up) */
   collapse?: { y: number; dy: number };
 }
+const shiftY = (n: FNode, dy: number): FNode => ({ ...n, m: [n.m[0], n.m[1], n.m[2], n.m[3], n.m[4], n.m[5] + dy] });
+const near = (a: number, b: number) => Math.abs(a - b) < 0.5;
+
+/**
+ * A mobile figure's "visual" frame (matched by `isVisual`): its picture moves down by `down`, the
+ * frame grows by `grow` and the page below its bottom edge (screen height `bottom`) moves down.
+ */
+function figureFix(route: string, isVisual: (n: FNode) => boolean, down: number, grow: number, bottom: number): Adjustment[] {
+  return [
+    {
+      bp: 'mobile', route,
+      match: (n) => n.n === 'visual' && isVisual(n),
+      patch: (n) => ({ ...n, h: n.h + grow, c: n.c!.map((k, i) => (i === 0 ? shiftY(k, down) : k)) }),
+    },
+    { bp: 'mobile', route, collapse: { y: bottom + 0.5, dy: -grow } },
+  ];
+}
+
+const OLD_TAG = 'OPEN FOR ONSITE / REMOTE WORK';
+const NEW_TAG = 'OPEN TO NEW ROLES';
+
+/**
+ * The home status tag's text (all breakpoints): the pill shrinks with it. Space Mono is
+ * monospaced, so the text's width scales with its length.
+ */
+function retag(pill: FNode): FNode {
+  const t = pill.c!.find((c) => c.t === 'TEXT' && c.tx === OLD_TAG)!;
+  const w = (t.w * NEW_TAG.length) / OLD_TAG.length;
+  return { ...pill, w: pill.w - (t.w - w), c: pill.c!.map((c) => (c === t ? { ...c, tx: NEW_TAG, w } : c)) };
+}
+const isTagPill = (n: FNode) => !!n.c?.some((c) => c.t === 'TEXT' && c.tx === OLD_TAG);
+
+/** The brand colour (the "sense" of the home headline, the primary button's hover). */
+const BRAND: Paint[] = [{ t: 'S', c: [0.2, 0.7333, 0.8039, 1] }];
+const INK: Paint[] = [{ t: 'S', c: [0.0824, 0.0824, 0.0902, 1] }];
+/** Primary button ("Explore projects"), resting state: white in the design, brand-coloured here. */
+const PRIMARY_REST = '725:10087';
+if (scene.variants[PRIMARY_REST]) scene.variants[PRIMARY_REST] = { ...scene.variants[PRIMARY_REST], f: BRAND };
+
+const textFill = (n: FNode, f: Paint[]): FNode =>
+  n.t === 'TEXT' && n.ts ? { ...n, ts: { ...n.ts, fill: f } } : n.c ? { ...n, c: n.c.map((c) => textFill(c, f)) } : n;
+
+/** The case-study bar's "next" pill: filled like the primary button, at rest and on hover. */
+const isNextPill = (n: FNode) => n.t === 'INSTANCE' && n.n.startsWith('pill/') && n.n.trim().endsWith('→');
+const fillNextPill = (n: FNode): FNode =>
+  textFill({ ...n, f: BRAND, s: undefined, ix: n.ix?.filter((x) => x.on !== 'ON_HOVER' && x.on !== 'MOUSE_ENTER' && x.on !== 'MOUSE_LEAVE') }, INK);
+
 const ADJUSTMENTS: Adjustment[] = [
+  { bp: '*', route: '*', match: (n) => n.cid === PRIMARY_REST, patch: (n) => ({ ...n, f: BRAND }) },
+  { bp: '*', route: '*', match: isNextPill, patch: fillNextPill },
+  ...(['desktop', 'tablet', 'mobile'] as const).map((bp): Adjustment => ({ bp, route: '', match: isTagPill, patch: retag })),
   {
     bp: 'desktop', route: 'projects/eletesemeny',
     match: (n) => n.n === 'Group 1171275454',
@@ -100,6 +154,11 @@ const ADJUSTMENTS: Adjustment[] = [
   },
   // the subtitle below it starts at 453 (title-block 216 + 237); "for state institutions" now ends at 339
   { bp: 'mobile', route: 'projects/problem-register', collapse: { y: 453, dy: 102 } },
+  // Mobile figures whose picture starts above its clipping frame (top cut off): the picture moves
+  // down into the frame, the frame grows by what it needs and the page below moves down with it.
+  ...figureFix('projects/eletesemeny', (v) => v.c?.[0]?.n === 'Rectangle' && near(v.c[0].m[5], -133.6), 14, 6, 3660.3),
+  ...figureFix('projects/eletesemeny', (v) => !!v.c?.[0]?.n.startsWith('FIG 2 image') && near(v.c[0].m[5], -16.6), 16.6, 17, 12888.5),
+  ...figureFix('projects/forecastify', (v) => v.c?.[0]?.n === 'image-slot' && near(v.c[0].m[5], -11.2), 11.2, 17, 5257.2),
   {
     bp: 'tablet', route: 'projects/problem-register',
     match: (n) => n.t === 'TEXT' && n.tx === 'for state institutions',
@@ -107,7 +166,6 @@ const ADJUSTMENTS: Adjustment[] = [
   },
 ];
 
-const shiftY = (n: FNode, dy: number): FNode => ({ ...n, m: [n.m[0], n.m[1], n.m[2], n.m[3], n.m[4], n.m[5] + dy] });
 
 /**
  * Removes dy px of height at screen height y: layers starting below it move up, frames reaching
@@ -145,16 +203,18 @@ function moveAnchors(n: FNode, dy: number) {
 }
 
 function adjust(n: FNode, bp: Breakpoint, route: string): FNode {
-  const list = ADJUSTMENTS.filter((x) => x.bp === bp && x.route === route);
+  const list = ADJUSTMENTS.filter((x) => (x.bp === '*' || x.bp === bp) && (x.route === '*' || x.route === route));
   if (!list.length) return n;
   const walk = (x: FNode): FNode => {
     const hit = list.find((l) => l.match?.(x));
     if (hit?.patch) return hit.patch(x);
     return x.c ? { ...x, c: x.c.map(walk) } : x;
   };
-  let out = walk(n);
-  for (const l of list) if (l.collapse) out = collapse(out, l.collapse.y, l.collapse.dy);
-  return out;
+  // Space first (lowest first, so each works in the design's own coordinates), then the patches.
+  let out = n;
+  const spaces = list.filter((l) => l.collapse).sort((a, b) => b.collapse!.y - a.collapse!.y);
+  for (const l of spaces) out = collapse(out, l.collapse!.y, l.collapse!.dy);
+  return walk(out);
 }
 
 export function Page({ bp, route, vw, vh }: { bp: Breakpoint; route: string; vw: number; vh: number }) {

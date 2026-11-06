@@ -77,6 +77,13 @@ Semantic wrappers, chosen by Figma component set, that render the Figma layers i
   on tablet (46 px in the design), matching desktop.
 - **Entry animations play once** per visit: window resizes (a mobile browser's toolbar showing and hiding while scrolling)
   do not restart them.
+- **Home status tag** reads "Open to new roles" (all breakpoints); its pill shrinks with the text.
+- **Primary button** ("Explore projects") is brand-coloured (#33BBCD, the colour of "sense") at rest as well as on hover;
+  the design has it white at rest. The case-study bar's "next" pill is filled the same way, at rest and on hover.
+- **Mobile figures cut off at the top** in the design (Digital Citizenship FIG 1 and FIG 3, Forecastify FIG 2): the
+  picture moves down into its frame, the frame grows by what it needs and the page below moves down with it.
+- **Swipeable frames**: frames with Figma overflow scrolling (the mobile interests carousel, two wide mobile diagrams)
+  scroll natively by touch, trackpad or wheel, without a visible scrollbar; the carousel settles on a card.
 - **Frosted top bars** (desktop project navigation) are clear at the very top of the page and frost over the first 40 px
   of scrolling (`FrostedBar`), so nothing reaching up behind them is cut off before the page scrolls.
 - **Scaled instances** (the home headline on tablet and mobile is a scaled copy of the desktop component) keep their scale

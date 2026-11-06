@@ -318,6 +318,31 @@ function RasterNode({ n }: { n: FNode }) {
 }
 
 /** Visual content of a node without its outer box (used by interactive wrappers too). */
+/**
+ * A frame that scrolls its content, as Figma's overflow scrolling does in the prototype (a carousel
+ * swiped sideways): a native scroll box, with the content's extent plus the frame's leading inset
+ * as trailing space, and no visible scrollbar.
+ */
+function ScrollFrame({ n, br, children }: { n: FNode; br: string | undefined; children: ReactNode }) {
+  const kids = n.c || [];
+  const left = Math.max(0, Math.min(...kids.map((c) => c.m[4])));
+  const top = Math.max(0, Math.min(...kids.map((c) => c.m[5])));
+  const w = Math.max(n.w, ...kids.map((c) => c.m[4] + c.w + left));
+  const h = Math.max(n.h, ...kids.map((c) => c.m[5] + c.h + top));
+  const x = n.ov !== 'V', y = n.ov !== 'H';
+  // A row of cards (a carousel) settles on a card after a swipe; a single wide diagram does not.
+  const cards = x && !y && kids.length > 1;
+  return (
+    <div className={cards ? 'fx-scroll fx-snap' : 'fx-scroll'} style={{
+      position: 'absolute', inset: 0, borderRadius: br,
+      overflowX: x ? 'auto' : 'hidden', overflowY: y ? 'auto' : 'hidden',
+      overscrollBehaviorX: x ? 'contain' : undefined, touchAction: x && !y ? 'pan-x pan-y' : undefined,
+    }}>
+      <div style={{ position: 'relative', width: x ? w : '100%', height: y ? h : '100%' }}>{children}</div>
+    </div>
+  );
+}
+
 export function NodeContent({ n }: { n: FNode }) {
   const hooks = useContext(HooksContext);
   if (n.r) return <RasterNode n={n} />;
@@ -342,7 +367,8 @@ export function NodeContent({ n }: { n: FNode }) {
         </div>
       )}
       {is && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: br, boxShadow: is }} />}
-      {kids && (n.clip ? <div style={{ position: 'absolute', inset: 0, borderRadius: br, overflow: 'hidden' }}>{kids}</div> : kids)}
+      {kids && (n.ov ? <ScrollFrame n={n} br={br}>{kids}</ScrollFrame>
+        : n.clip ? <div style={{ position: 'absolute', inset: 0, borderRadius: br, overflow: 'hidden' }}>{kids}</div> : kids)}
       {strokeLayer(n)}
     </>
   );
