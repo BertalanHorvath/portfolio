@@ -35,6 +35,19 @@ interface Shown {
   leaving?: number;
 }
 
+/** The page's own scroll position is managed here, not restored by the browser. */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+/** Jumps to the top of the page, stopping any momentum scroll first (iOS). */
+function toTop() {
+  const root = document.documentElement;
+  const prev = root.style.overflowY;
+  root.style.overflowY = 'hidden'; // ends a running momentum scroll in iOS Safari
+  window.scrollTo(0, 0);
+  root.style.overflowY = prev;
+  window.scrollTo(0, 0);
+}
+
 /**
  * Responsive shell: picks the desktop, tablet or mobile design for the window width and keeps
  * the route in the URL hash. Navigations with a Figma "dissolve" (tablet / mobile dock) fade the
@@ -67,7 +80,6 @@ export function App() {
       const next = { key: seq.current, route };
       setPages((cur) => (dissolve ? [{ ...cur[cur.length - 1], leaving: scrollY }, next] : [next]));
       setFade(dissolve ? tr : undefined);
-      window.scrollTo({ top: 0 });
       if (dissolve) window.setTimeout(() => setPages((cur) => cur.filter((p) => p.leaving === undefined)), tr!.dur * 1000);
     };
     window.addEventListener('hashchange', onHash);
@@ -75,6 +87,19 @@ export function App() {
   }, []);
 
   const route = pages[pages.length - 1].route;
+  // A new page always starts at its top: once more after it is on screen and on the next two
+  // frames (iOS Safari ignores a scroll while momentum scrolling, or restores the old position).
+  const shownKey = pages[pages.length - 1].key;
+  useLayoutEffect(() => {
+    if (shownKey === 0) return;
+    toTop();
+    let n = 0;
+    let raf = requestAnimationFrame(function again() {
+      toTop();
+      if (++n < 2) raf = requestAnimationFrame(again);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [shownKey]);
   useEffect(() => {
     document.title = titleOf(route);
   }, [route]);
