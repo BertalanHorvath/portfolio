@@ -324,7 +324,9 @@ function PlayedPage({ chain, trees, bp, vw, vh }: { chain: string[]; trees: Reco
     return dy ? { ...f, m: [f.m[0], f.m[1], f.m[2], f.m[3], f.m[4], f.m[5] + dy] } : f;
   };
   const [stickySlot, setStickySlot] = useState<HTMLElement | null>(null);
-  const geometry = useMemo(() => ({ scale: s, viewH, stickTop, stickySlot, dx }), [s, viewH, stickTop, stickySlot, dx]);
+  // The case-study hero (big title): the project bar names the case study once it has scrolled away.
+  const heroBottom = useMemo(() => bottomOf(start, (n) => n.n === 'hero-group'), [start]);
+  const geometry = useMemo(() => ({ scale: s, viewH, stickTop, stickySlot, dx, heroBottom }), [s, viewH, stickTop, stickySlot, dx, heroBottom]);
 
   return (
     <PageContext.Provider value={geometry}>

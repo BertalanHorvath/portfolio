@@ -13,8 +13,10 @@ export interface PageGeometry {
   stickySlot: HTMLElement | null;
   /** horizontal shift (design px) of the centred content on windows wider than the design */
   dx: number;
+  /** screen height (design px) of the bottom of the case-study hero, if the page has one */
+  heroBottom: number | null;
 }
-export const PageContext = createContext<PageGeometry>({ scale: 1, viewH: 962, stickTop: 0, stickySlot: null, dx: 0 });
+export const PageContext = createContext<PageGeometry>({ scale: 1, viewH: 962, stickTop: 0, stickySlot: null, dx: 0, heroBottom: null });
 export const usePage = () => useContext(PageContext);
 
 const subscribe = (cb: () => void) => {
