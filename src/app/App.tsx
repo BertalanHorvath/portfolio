@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Page } from './Page';
 import { breakpointFor, currentRoute, takeTransition, titleOf } from './routes';
+import { loadRoute, prefetchBreakpoint } from '../figma/scene';
 import type { Transition } from '../figma/types';
 
 /**
@@ -45,11 +46,21 @@ export function App() {
   const [pages, setPages] = useState<Shown[]>(() => [{ key: 0, route: currentRoute() }]);
   const [fade, setFade] = useState<Transition | undefined>();
   const seq = useRef(0);
+  const bpRef = useRef(bp);
+  bpRef.current = bp;
+
+  // The other pages of this breakpoint load in the background once the browser is idle.
+  useEffect(() => { prefetchBreakpoint(bp); }, [bp]);
 
   useEffect(() => {
-    const onHash = () => {
+    let nav = 0;
+    const onHash = async () => {
       const route = currentRoute();
       const tr = takeTransition();
+      // The current page stays until the next one's screens are loaded (no empty frame between).
+      const mine = ++nav;
+      await loadRoute(bpRef.current, route).catch(() => {});
+      if (mine !== nav) return; // a later navigation won
       const dissolve = tr?.type === 'DISSOLVE' && tr.dur > 0 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const scrollY = window.scrollY;
       seq.current += 1;

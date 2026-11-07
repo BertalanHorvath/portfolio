@@ -28,3 +28,25 @@ export function loadScreen(id: string): Promise<FNode> {
 }
 
 export const loadedScreen = (id: string) => loaded.get(id);
+
+/** The screens a route plays on a breakpoint (entry state and the states it animates to). */
+export const screensOf = (bp: string, route: string) =>
+  Object.keys(scene.meta).filter((id) => scene.meta[id].bp === bp && scene.meta[id].route === route);
+
+/** Loads every screen of a route (resolves at once when they are cached). */
+export const loadRoute = (bp: string, route: string) => Promise.all(screensOf(bp, route).map(loadScreen));
+
+/**
+ * Fetches a breakpoint's other screens one by one while the browser is idle, so that moving
+ * between pages does not wait for the network.
+ */
+export function prefetchBreakpoint(bp: string) {
+  const ids = Object.keys(scene.meta).filter((id) => scene.meta[id].bp === bp && !loaded.has(id));
+  const idle = (cb: () => void) =>
+    'requestIdleCallback' in window ? window.requestIdleCallback(cb, { timeout: 3000 }) : globalThis.setTimeout(cb, 300);
+  const next = () => {
+    const id = ids.shift();
+    if (id) idle(() => { loadScreen(id).catch(() => {}).finally(next); });
+  };
+  next();
+}

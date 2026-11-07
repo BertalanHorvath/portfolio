@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { HooksContext, Node, type VideoSource } from '../figma/Node';
-import { loadScreen, scene } from '../figma/scene';
+import { loadedScreen, loadScreen, scene } from '../figma/scene';
 import { assetUrls, preloadImages } from '../figma/paint';
 import { pinRight, TOOL_CARD } from '../figma/Interactive';
 import { useAnimatedTree } from '../figma/useAnimatedTree';
@@ -289,9 +289,15 @@ export function Page({ bp, route, vw, vh }: { bp: Breakpoint; route: string; vw:
     () => Object.keys(scene.meta).filter((id) => scene.meta[id].bp === bp && scene.meta[id].route === route),
     [bp, route],
   );
-  const [trees, setTrees] = useState<Record<string, FNode> | null>(null);
+  // Screens already fetched (the shell waits for them before it switches pages) render at once,
+  // so a page never flashes empty between two others.
+  const cached = () => (ids.length && ids.every((id) => loadedScreen(id))
+    ? Object.fromEntries(ids.map((id) => [id, adjust(loadedScreen(id)!, bp, route)])) : null);
+  const [trees, setTrees] = useState<Record<string, FNode> | null>(cached);
   useEffect(() => {
     let live = true;
+    const hit = cached();
+    if (hit) { setTrees((cur) => cur ?? hit); return; }
     setTrees(null);
     Promise.all(ids.map((id) => loadScreen(id).then((n) => [id, n] as const))).then((pairs) => {
       if (live) setTrees(Object.fromEntries(pairs.map(([id, n]) => [id, adjust(n, bp, route)])));

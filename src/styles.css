@@ -16,6 +16,10 @@ body,
 html {
   overflow-x: hidden;
   overscroll-behavior-x: none;
+  /* The vertical scrollbar's room is always kept (long case studies have one, the one-screen pages
+     do not), so the layout width does not change between pages; dark to match the pages. */
+  overflow-y: scroll;
+  color-scheme: dark;
 }
 
 #root {
