@@ -197,6 +197,15 @@ const ADJUSTMENTS: Adjustment[] = [
   ...figureFix('projects/eletesemeny', (v) => v.c?.[0]?.n === 'Rectangle' && near(v.c[0].m[5], -133.6), 14, 6),
   ...figureFix('projects/eletesemeny', (v) => !!v.c?.[0]?.n.startsWith('FIG 2 image') && near(v.c[0].m[5], -16.6), 16.6, 17),
   ...figureFix('projects/forecastify', (v) => v.c?.[0]?.n === 'image-slot' && near(v.c[0].m[5], -11.2), 11.2, 17),
+  // The project bar's counter, centred in the bar while the case-study name is hidden.
+  {
+    bp: '*', route: '*',
+    match: (n) => n.n === 'current' && !!n.c?.some((c) => c.n === 'current-title'),
+    patch: (n) => ({
+      ...n,
+      c: n.c!.map((c) => (c.t === 'TEXT' && c.n !== 'current-title' ? { ...c, hy: n.h / 2 - (c.m[5] + c.h / 2) } : c)),
+    }),
+  },
   {
     bp: '*', route: 'creative-suite',
     match: (n) => n.cs === TOOL_CARD && !!n.cid && !!scene.variants[n.cid] && n.w !== scene.variants[n.cid].w,

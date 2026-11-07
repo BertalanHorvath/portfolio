@@ -7,7 +7,7 @@ import { ContactBlock } from '../components/ContactBlock';
 import { InterestCard, ToolCard } from '../components/Cards';
 import { StickyLayer } from '../components/Contents';
 import { FrostedBar } from '../components/FrostedBar';
-import { CurrentTitle } from '../components/CurrentTitle';
+import { CurrentCounter, CurrentTitle } from '../components/CurrentTitle';
 
 /** Figma component sets (ids from the file) → semantic React components. */
 const SETS = {
@@ -26,6 +26,7 @@ const CONTACTS_COMPONENT = '448:250876';
  */
 export function renderSpecial(n: FNode): ReactNode | undefined {
   if (n.t === 'TEXT' && n.n === 'current-title') return <CurrentTitle node={n} />;
+  if (n.t === 'TEXT' && n.hy != null) return <CurrentCounter node={n} />;
   if (n.sb === 'S') return <StickyLayer node={n} />;
   if (n.t === 'INSTANCE' || n.t === 'COMPONENT') {
     if (n.cs === SETS.menu || (n.cs && SETS.dock.includes(n.cs))) return <Navigation node={n} />;

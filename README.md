@@ -87,7 +87,8 @@ Semantic wrappers, chosen by Figma component set, that render the Figma layers i
 - **Swipeable frames**: frames with Figma overflow scrolling (the mobile interests carousel, two wide mobile diagrams)
   scroll natively by touch, trackpad or wheel, without a visible scrollbar; the carousel settles on a card.
 - **Case-study name in the project bar** appears (fade) once the hero, where the name is shown large, has scrolled up under
-  the bar, and hides again when the hero returns.
+  the bar, and hides again when the hero returns. While it is hidden the counter ("05 / 06") is centred on the bar's
+  buttons; the name pushes it up to its place.
 - **Frosted top bars** (desktop project navigation) are clear at the very top of the page and frost over the first 40 px
   of scrolling (`FrostedBar`), so nothing reaching up behind them is cut off before the page scrolls.
 - **Scaled instances** (the home headline on tablet and mobile is a scaled copy of the desktop component) keep their scale

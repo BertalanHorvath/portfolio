@@ -81,6 +81,8 @@ export interface FNode {
   sd?: number[];
   rr?: number | [number, number, number, number];
   clip?: 1;
+  /** project-bar counter: vertical offset to its centred position while the case-study name is hidden */
+  hy?: number;
   /** text: draw ← and → as the chevron icon */
   chev?: 1;
   /** the frame scrolls its content (Figma overflow scrolling): horizontal, vertical or both */
