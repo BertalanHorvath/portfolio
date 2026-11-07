@@ -3,7 +3,7 @@ import { HooksContext, Node, type VideoSource } from '../figma/Node';
 import { loadScreen, scene } from '../figma/scene';
 import { assetUrls, preloadImages } from '../figma/paint';
 import { useAnimatedTree } from '../figma/useAnimatedTree';
-import type { Breakpoint, FNode, Paint } from '../figma/types';
+import type { Breakpoint, FNode, Paint, Transition } from '../figma/types';
 import { renderSpecial } from './special';
 import { PageContext } from './scroll';
 
@@ -73,8 +73,8 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
 /**
  * Corrections to the design, applied to every state of a route (documented in the README):
  * - the home status tag reads "Open to new roles".
- * - the primary button ("Explore projects") is brand-coloured at rest too (white in the design),
- *   and the case-study bar's "next" pill is filled the same way, at rest and on hover.
+ * - primary buttons ("Explore projects", the case-study bar's "next" pill) are brand-coloured with
+ *   white text at rest and white with dark text on hover; the bar's pills draw chevrons.
  * - the Digital Citizenship hero mockup reaches above the hero, under the fixed project bar, which
  *   cut its top off. It moves down part of the way (the bar is also clear at the top of the page,
  *   see FrostedBar) and is drawn above the hero's border, which would otherwise cross it.
@@ -88,24 +88,42 @@ interface Adjustment {
   route: string;
   match?: (n: FNode) => boolean;
   patch?: (n: FNode) => FNode;
-  /** remove `dy` px of vertical space at screen height `y` (layers below move up) */
-  collapse?: { y: number; dy: number };
+  /** remove `dy` px of vertical space at screen height `y` (layers below move up); negative grows */
+  collapse?: { y: number; dy: number } | ((root: FNode) => { y: number; dy: number } | null);
 }
 const shiftY = (n: FNode, dy: number): FNode => ({ ...n, m: [n.m[0], n.m[1], n.m[2], n.m[3], n.m[4], n.m[5] + dy] });
 const near = (a: number, b: number) => Math.abs(a - b) < 0.5;
 
+/** Screen height of the bottom edge of the first layer matching `match` (null if none). */
+function bottomOf(root: FNode, match: (n: FNode) => boolean): number | null {
+  const walk = (n: FNode, top: number): number | null => {
+    for (const k of n.c || []) {
+      const kt = top + k.m[5];
+      if (match(k)) return kt + k.h;
+      const hit = walk(k, kt);
+      if (hit != null) return hit;
+    }
+    return null;
+  };
+  return walk(root, 0);
+}
+
 /**
  * A mobile figure's "visual" frame (matched by `isVisual`): its picture moves down by `down`, the
- * frame grows by `grow` and the page below its bottom edge (screen height `bottom`) moves down.
+ * frame grows by `grow` and the page below its bottom edge moves down (found in the screen itself,
+ * so content edits above it do not break the fix).
  */
-function figureFix(route: string, isVisual: (n: FNode) => boolean, down: number, grow: number, bottom: number): Adjustment[] {
+function figureFix(route: string, isVisual: (n: FNode) => boolean, down: number, grow: number): Adjustment[] {
+  const match = (n: FNode) => n.n === 'visual' && isVisual(n);
   return [
+    { bp: 'mobile', route, match, patch: (n) => ({ ...n, h: n.h + grow, c: n.c!.map((k, i) => (i === 0 ? shiftY(k, down) : k)) }) },
     {
       bp: 'mobile', route,
-      match: (n) => n.n === 'visual' && isVisual(n),
-      patch: (n) => ({ ...n, h: n.h + grow, c: n.c!.map((k, i) => (i === 0 ? shiftY(k, down) : k)) }),
+      collapse: (root) => {
+        const bottom = bottomOf(root, match);
+        return bottom == null ? null : { y: bottom + 0.5, dy: -grow };
+      },
     },
-    { bp: 'mobile', route, collapse: { y: bottom + 0.5, dy: -grow } },
   ];
 }
 
@@ -123,24 +141,52 @@ function retag(pill: FNode): FNode {
 }
 const isTagPill = (n: FNode) => !!n.c?.some((c) => c.t === 'TEXT' && c.tx === OLD_TAG);
 
-/** The brand colour (the "sense" of the home headline, the primary button's hover). */
+/** The brand colour (the "sense" of the home headline). */
 const BRAND: Paint[] = [{ t: 'S', c: [0.2, 0.7333, 0.8039, 1] }];
+const WHITE: Paint[] = [{ t: 'S', c: [1, 1, 1, 1] }];
 const INK: Paint[] = [{ t: 'S', c: [0.0824, 0.0824, 0.0902, 1] }];
-/** Primary button ("Explore projects"), resting state: white in the design, brand-coloured here. */
+
+/** Colours a button's content: its texts and its icon shapes. */
+const contentFill = (n: FNode, f: Paint[]): FNode =>
+  n.t === 'TEXT' && n.ts ? { ...n, ts: { ...n.ts, fill: f } }
+    : n.t === 'VECTOR' ? { ...n, f: n.f?.length ? f : n.f, s: n.s?.length ? f : n.s }
+      : n.c ? { ...n, c: n.c.map((c) => contentFill(c, f)) } : n;
+
+/**
+ * Primary buttons ("Explore projects", the case-study bar's "next" pill): brand colour with white
+ * text at rest, white with dark text on hover (the design has the primary button white at rest).
+ */
+const primaryRest = (n: FNode): FNode => contentFill({ ...n, f: BRAND, s: undefined }, WHITE);
+const primaryHover = (n: FNode): FNode => contentFill({ ...n, f: WHITE, s: undefined }, INK);
 const PRIMARY_REST = '725:10087';
-if (scene.variants[PRIMARY_REST]) scene.variants[PRIMARY_REST] = { ...scene.variants[PRIMARY_REST], f: BRAND };
+const PRIMARY_HOVER = '725:10093';
+if (scene.variants[PRIMARY_REST]) scene.variants[PRIMARY_REST] = primaryRest(scene.variants[PRIMARY_REST]);
+if (scene.variants[PRIMARY_HOVER]) scene.variants[PRIMARY_HOVER] = primaryHover(scene.variants[PRIMARY_HOVER]);
 
-const textFill = (n: FNode, f: Paint[]): FNode =>
-  n.t === 'TEXT' && n.ts ? { ...n, ts: { ...n.ts, fill: f } } : n.c ? { ...n, c: n.c.map((c) => textFill(c, f)) } : n;
-
-/** The case-study bar's "next" pill: filled like the primary button, at rest and on hover. */
-const isNextPill = (n: FNode) => n.t === 'INSTANCE' && n.n.startsWith('pill/') && n.n.trim().endsWith('→');
-const fillNextPill = (n: FNode): FNode =>
-  textFill({ ...n, f: BRAND, s: undefined, ix: n.ix?.filter((x) => x.on !== 'ON_HOVER' && x.on !== 'MOUSE_ENTER' && x.on !== 'MOUSE_LEAVE') }, INK);
+/** The case-study bar's pills ("← previous", "next →"); the next one is a primary button. */
+const PILL_REST = '1353:37';
+const PILL_HOVER = '1353:39';
+const NEXT_PILL_HOVER = 'fx:next-pill-hover';
+if (scene.variants[PILL_HOVER]) scene.variants[NEXT_PILL_HOVER] = primaryHover(scene.variants[PILL_HOVER]);
+const GENTLE: Transition = { type: 'SMART_ANIMATE', dur: 1.0220937728881836, ease: 'GENTLE' };
+const isPill = (n: FNode) => n.t === 'INSTANCE' && n.n.startsWith('pill/');
+const isNextPill = (n: FNode) => isPill(n) && n.n.trim().endsWith('→');
+/** Pill labels draw their arrows as the home page's chevron. */
+const chevrons = (n: FNode): FNode =>
+  n.t === 'TEXT' ? { ...n, chev: 1 } : n.c ? { ...n, c: n.c.map(chevrons) } : n;
+const pill = (n: FNode): FNode => {
+  if (!isNextPill(n)) return chevrons(n);
+  const hover = n.ix?.find((x) => x.on === 'ON_HOVER');
+  const ix = [
+    ...(n.ix || []).filter((x) => x.on !== 'ON_HOVER' && x.on !== 'MOUSE_ENTER' && x.on !== 'MOUSE_LEAVE'),
+    { on: 'ON_HOVER', do: 'CHANGE_TO', to: NEXT_PILL_HOVER, tr: hover?.tr ?? GENTLE },
+  ];
+  return chevrons({ ...primaryRest(n), ix });
+};
 
 const ADJUSTMENTS: Adjustment[] = [
-  { bp: '*', route: '*', match: (n) => n.cid === PRIMARY_REST, patch: (n) => ({ ...n, f: BRAND }) },
-  { bp: '*', route: '*', match: isNextPill, patch: fillNextPill },
+  { bp: '*', route: '*', match: (n) => n.cid === PRIMARY_REST, patch: primaryRest },
+  { bp: '*', route: '*', match: isPill, patch: pill },
   ...(['desktop', 'tablet', 'mobile'] as const).map((bp): Adjustment => ({ bp, route: '', match: isTagPill, patch: retag })),
   {
     bp: 'desktop', route: 'projects/eletesemeny',
@@ -156,9 +202,9 @@ const ADJUSTMENTS: Adjustment[] = [
   { bp: 'mobile', route: 'projects/problem-register', collapse: { y: 453, dy: 102 } },
   // Mobile figures whose picture starts above its clipping frame (top cut off): the picture moves
   // down into the frame, the frame grows by what it needs and the page below moves down with it.
-  ...figureFix('projects/eletesemeny', (v) => v.c?.[0]?.n === 'Rectangle' && near(v.c[0].m[5], -133.6), 14, 6, 3660.3),
-  ...figureFix('projects/eletesemeny', (v) => !!v.c?.[0]?.n.startsWith('FIG 2 image') && near(v.c[0].m[5], -16.6), 16.6, 17, 12888.5),
-  ...figureFix('projects/forecastify', (v) => v.c?.[0]?.n === 'image-slot' && near(v.c[0].m[5], -11.2), 11.2, 17, 5257.2),
+  ...figureFix('projects/eletesemeny', (v) => v.c?.[0]?.n === 'Rectangle' && near(v.c[0].m[5], -133.6), 14, 6),
+  ...figureFix('projects/eletesemeny', (v) => !!v.c?.[0]?.n.startsWith('FIG 2 image') && near(v.c[0].m[5], -16.6), 16.6, 17),
+  ...figureFix('projects/forecastify', (v) => v.c?.[0]?.n === 'image-slot' && near(v.c[0].m[5], -11.2), 11.2, 17),
   {
     bp: 'tablet', route: 'projects/problem-register',
     match: (n) => n.t === 'TEXT' && n.tx === 'for state institutions',
@@ -212,8 +258,11 @@ function adjust(n: FNode, bp: Breakpoint, route: string): FNode {
   };
   // Space first (lowest first, so each works in the design's own coordinates), then the patches.
   let out = n;
-  const spaces = list.filter((l) => l.collapse).sort((a, b) => b.collapse!.y - a.collapse!.y);
-  for (const l of spaces) out = collapse(out, l.collapse!.y, l.collapse!.dy);
+  const spaces = list
+    .map((l) => (typeof l.collapse === 'function' ? l.collapse(n) : l.collapse))
+    .filter((c): c is { y: number; dy: number } => !!c)
+    .sort((a, b) => b.y - a.y);
+  for (const c of spaces) out = collapse(out, c.y, c.dy);
   return walk(out);
 }
 

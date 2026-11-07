@@ -81,6 +81,8 @@ export interface FNode {
   sd?: number[];
   rr?: number | [number, number, number, number];
   clip?: 1;
+  /** text: draw ← and → as the chevron icon */
+  chev?: 1;
   /** the frame scrolls its content (Figma overflow scrolling): horizontal, vertical or both */
   ov?: 'H' | 'V' | 'B';
   // text

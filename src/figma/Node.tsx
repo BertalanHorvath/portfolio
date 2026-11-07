@@ -207,9 +207,33 @@ const GLYPHS: Record<string, (fs: number) => ReactNode> = {
   ),
 };
 
+/**
+ * The home page's chevron icon (u:angle-right, a 16 px frame for 13 px text), in em so it follows
+ * the text; mirrored for "←". Stands in for arrow characters in labels marked `chev`.
+ */
+const CHEVRON = 'M3.9672 3.02387L1.14053 0.197199C1.07855 0.134713 1.00482 0.0851169 0.92358 0.0512711C0.84234 0.0174253 0.755203 0 0.667195 0C0.579187 0 0.49205 0.0174253 0.41081 0.0512711C0.329571 0.0851169 0.255837 0.134713 0.193862 0.197199C0.0696944 0.322107 0 0.491075 0 0.667199C0 0.843323 0.0696944 1.01229 0.193862 1.1372L2.55386 3.4972L0.193862 5.8572C0.0696944 5.98211 0 6.15108 0 6.3272C1.18424e-15 6.50332 0.0696944 6.67229 0.193862 6.7972C0.256155 6.85899 0.330032 6.90787 0.411257 6.94105C0.492482 6.97422 0.579457 6.99104 0.667195 6.99053C0.754933 6.99104 0.841908 6.97422 0.923133 6.94105C1.00436 6.90787 1.07824 6.85899 1.14053 6.7972L3.9672 3.97053C4.02968 3.90856 4.07928 3.83482 4.11312 3.75358C4.14697 3.67234 4.16439 3.58521 4.16439 3.4972C4.16439 3.40919 4.14697 3.32205 4.11312 3.24081C4.07928 3.15957 4.02968 3.08584 3.9672 3.02387Z';
+function Chevron({ left }: { left: boolean }) {
+  return (
+    <svg aria-hidden="true" viewBox="2 0 12 16" fill="currentColor"
+      style={{ display: 'inline-block', width: '0.9375em', height: '1.25em', verticalAlign: '-0.3em', transform: left ? 'scaleX(-1)' : undefined }}>
+      <path transform="translate(5.9195 4.5028)" d={CHEVRON} />
+    </svg>
+  );
+}
+const withChevrons = (text: string): ReactNode =>
+  text.split(/([←→])/).map((part, i) => (part === '→' || part === '←' ? <Chevron key={i} left={part === '←'} /> : part));
+
 function TextNode({ n }: { n: FNode }) {
   const text = (n.tx ?? '').replace(SOFT_BREAKS, '\n');
   const base = textCss(n.ts, n.w, n.h);
+  if (n.chev && /[←→]/.test(text)) {
+    const alone = text.trim().length === 1;
+    return (
+      <div style={{ ...base, position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: alone ? 'center' : 'flex-start', whiteSpace: 'pre' }}>
+        <span className={`fx-text fx-ff-${(n.ts?.ff ?? '').toLowerCase().replace(/\s+/g, '-')}`}>{withChevrons(text)}</span>
+      </div>
+    );
+  }
   if (SYMBOL.test(text)) {
     // Centred in its box, as Figma draws it, whatever the fallback font's side bearings.
     return (

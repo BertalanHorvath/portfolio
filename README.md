@@ -20,7 +20,9 @@ npm install && npm start        # builds and serves on http://localhost:4173
 The Figma file is the single source of truth. Nothing in the UI is re-drawn by hand:
 
 1. **`scripts/figma/sync.mjs`** reads the three sections and every reachable component variant through the Figma REST API
-   (`npm run figma:sync`, token in `FIGMA_TOKEN`). It compiles each screen into `public/figma/s/<id>.json` (loaded on
+   (`npm run figma:sync`, token in `FIGMA_TOKEN`; with the token saved as an environment network credential for
+   `api.figma.com` instead, run `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt node scripts/figma/sync.mjs
+   --refresh`, so that Node's fetch goes through the proxy that adds it). It compiles each screen into `public/figma/s/<id>.json` (loaded on
    demand) and an index in `src/figma/scene.json` (screen → breakpoint and route, component variants, scroll anchors,
    images, rasters). Geometry, fills, gradients, image fills, strokes, radii, effects, text styles and runs, vector paths,
    masks, constraints, scroll behaviour (fixed / sticky) and prototype interactions are kept. Image fills go to
@@ -78,8 +80,9 @@ Semantic wrappers, chosen by Figma component set, that render the Figma layers i
 - **Entry animations play once** per visit: window resizes (a mobile browser's toolbar showing and hiding while scrolling)
   do not restart them.
 - **Home status tag** reads "Open to new roles" (all breakpoints); its pill shrinks with the text.
-- **Primary button** ("Explore projects") is brand-coloured (#33BBCD, the colour of "sense") at rest as well as on hover;
-  the design has it white at rest. The case-study bar's "next" pill is filled the same way, at rest and on hover.
+- **Primary buttons** ("Explore projects" and the case-study bar's "next" pill): brand colour (#33BBCD, the colour of
+  "sense") with white text at rest, white with dark text on hover. The bar's pills draw their arrows as the home page's
+  chevron icon.
 - **Mobile figures cut off at the top** in the design (Digital Citizenship FIG 1 and FIG 3, Forecastify FIG 2): the
   picture moves down into its frame, the frame grows by what it needs and the page below moves down with it.
 - **Swipeable frames**: frames with Figma overflow scrolling (the mobile interests carousel, two wide mobile diagrams)

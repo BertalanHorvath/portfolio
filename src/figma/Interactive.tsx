@@ -38,7 +38,7 @@ function withOverrides(base: FNode, v: FNode): FNode {
       if (!bk) return k;
       const m = merge(bk, k);
       return k.t === 'TEXT' && bk.t === 'TEXT'
-        ? { ...m, tx: bk.tx, runs: bk.runs, ost: bk.runs ? bk.ost : k.ost, ar: bk.ar }
+        ? { ...m, tx: bk.tx, runs: bk.runs, ost: bk.runs ? bk.ost : k.ost, ar: bk.ar, chev: bk.chev }
         : m;
     });
     return { ...x, m: b.m, w: b.w, h: b.h, fg: b.fg ?? x.fg, sg: b.sg ?? x.sg, c };
