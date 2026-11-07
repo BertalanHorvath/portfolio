@@ -3,13 +3,26 @@ import { Page } from './Page';
 import { breakpointFor, currentRoute, takeTransition, titleOf } from './routes';
 import type { Transition } from '../figma/types';
 
+/**
+ * The window's layout size. The width excludes a vertical scrollbar (long pages have one, the
+ * one-screen home page does not), so the page and its fixed bars line up the same on every page;
+ * it is measured again when a scrollbar appears or goes away.
+ */
 function useViewport() {
-  const read = () => ({ w: window.innerWidth, h: window.innerHeight });
+  const read = () => ({ w: document.documentElement.clientWidth || window.innerWidth, h: window.innerHeight });
   const [vp, setVp] = useState(read);
   useLayoutEffect(() => {
-    const onResize = () => setVp(read());
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const update = () => setVp((cur) => {
+      const next = read();
+      return next.w === cur.w && next.h === cur.h ? cur : next;
+    });
+    window.addEventListener('resize', update);
+    const ro = new ResizeObserver(update);
+    ro.observe(document.documentElement);
+    return () => {
+      window.removeEventListener('resize', update);
+      ro.disconnect();
+    };
   }, []);
   return vp;
 }
