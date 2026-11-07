@@ -78,6 +78,8 @@ Semantic wrappers, chosen by Figma component set, that render the Figma layers i
   edge, at rest and on hover; in the design the logo stayed where it was in the narrower component.
 - **Entry animations play once** per visit: window resizes (a mobile browser's toolbar showing and hiding while scrolling)
   do not restart them.
+- **Desktop "Explore projects"** opens the first case study, as on tablet and mobile: in the design its click (on the hover
+  state) is a "navigate to" with no destination.
 - **Home status tag** reads "Open to new roles" (all breakpoints); its pill shrinks with the text.
 - **Primary buttons** ("Explore projects" and the case-study bar's "next" pill): brand colour (#33BBCD, the colour of
   "sense") with white text at rest, white with dark text on hover. The bar's pills draw their arrows as the home page's

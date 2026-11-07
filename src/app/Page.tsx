@@ -74,6 +74,7 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
 /**
  * Corrections to the design, applied to every state of a route (documented in the README):
  * - the home status tag reads "Open to new roles".
+ * - the desktop "Explore projects" button opens the first case study (no destination in the design).
  * - primary buttons ("Explore projects", the case-study bar's "next" pill) are brand-coloured with
  *   white text at rest and white with dark text on hover; the bar's pills draw chevrons.
  * - the Digital Citizenship hero mockup reaches above the hero, under the fixed project bar, which
@@ -183,8 +184,24 @@ const pill = (n: FNode): FNode => {
   return chevrons({ ...primaryRest(n), ix });
 };
 
+/**
+ * The desktop "Explore projects" button: in the design its click ("navigate to", on the hover
+ * state) has no destination. It opens the first case study, as on tablet and mobile.
+ */
+const FIRST_CASE = 'projects/eletesemeny';
+const firstCaseScreen = (bp: Breakpoint | '*') =>
+  Object.keys(scene.meta).find((id) => scene.meta[id].bp === bp && scene.meta[id].route === FIRST_CASE);
+const DISSOLVE: Transition = { type: 'DISSOLVE', dur: 0.2, ease: 'EASE_OUT' };
+const withClick = (bp: Breakpoint) => (n: FNode): FNode => {
+  if (n.ix?.some((x) => x.on === 'ON_CLICK' && (x.to || x.url))) return n;
+  const to = firstCaseScreen(bp);
+  return to ? { ...n, ix: [...(n.ix || []), { on: 'ON_CLICK', do: 'NAVIGATE', to, tr: DISSOLVE }] } : n;
+};
+
 const ADJUSTMENTS: Adjustment[] = [
-  { bp: '*', route: '*', match: (n) => n.cid === PRIMARY_REST, patch: primaryRest },
+  ...(['desktop', 'tablet', 'mobile'] as const).map((bp): Adjustment => ({
+    bp, route: '*', match: (n) => n.cid === PRIMARY_REST, patch: (n) => primaryRest(withClick(bp)(n)),
+  })),
   { bp: '*', route: '*', match: isPill, patch: pill },
   ...(['desktop', 'tablet', 'mobile'] as const).map((bp): Adjustment => ({ bp, route: '', match: isTagPill, patch: retag })),
   {

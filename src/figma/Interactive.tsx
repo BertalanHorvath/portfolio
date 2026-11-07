@@ -115,11 +115,13 @@ export function variantAt(base: FNode, variantId: string): FNode {
 }
 
 const find = (n: FNode | undefined, on: string) => n?.ix?.find((x) => x.on === on);
+/** A click action that leads somewhere (Figma keeps "navigate to" actions with no destination). */
+const hasTarget = (x: Interaction) => !!(x.to || x.url);
 
 /** The click action of a layer, also looking at its hover state (Figma often puts it there). */
 export function clickAction(n: FNode): Interaction | undefined {
   const own = find(n, 'ON_CLICK');
-  if (own) return own;
+  if (own && hasTarget(own)) return own;
   const hover = find(n, 'ON_HOVER');
   return hover?.to ? find(scene.variants[hover.to], 'ON_CLICK') : undefined;
 }
@@ -223,7 +225,8 @@ export function Interactive({ node, as: asProp, onActivate, focusHover, href: hr
   };
 
   const onClick = (e: MouseEvent) => {
-    const ix = find(current(), 'ON_CLICK') ?? clickAction(node);
+    const state = find(current(), 'ON_CLICK');
+    const ix = state && hasTarget(state) ? state : clickAction(node);
     if (onActivate) return onActivate(ix, e);
     if (!ix) return;
     if (ix.do === 'NAVIGATE') {
