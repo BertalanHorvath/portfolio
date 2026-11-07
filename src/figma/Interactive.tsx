@@ -79,6 +79,24 @@ function instanceScale(base: FNode): number {
   return Math.abs(kx - 1) > 0.01 && Math.abs(kx - ky) < 0.03 * kx ? kx : 1;
 }
 
+/** Tool cards (component set): their logo sits at the card's right edge. */
+export const TOOL_CARD = '725:9708';
+
+/**
+ * An instance made wider than its component `def`: the layers that touch the component's right
+ * edge (judged on the component's own layout) keep to the instance's right edge, as a "right"
+ * constraint does in Figma.
+ */
+export function pinRight(n: FNode, def: FNode): FNode {
+  const dx = n.w - def.w;
+  if (!dx) return n;
+  const pinned = new Set((def.c || []).map((c, i) => (c.m[4] + c.w >= def.w - 0.5 ? i : -1)));
+  return {
+    ...n,
+    c: n.c?.map((c, i) => (pinned.has(i) ? { ...c, m: [c.m[0], c.m[1], c.m[2], c.m[3], c.m[4] + dx, c.m[5]] } : c)),
+  };
+}
+
 /**
  * A variant rendered in place of an instance keeps the instance's placement, scale and text
  * overrides, as in Figma.
@@ -88,6 +106,11 @@ export function variantAt(base: FNode, variantId: string): FNode {
   if (!v) return base;
   const k = instanceScale(base);
   if (k !== 1) v = scaleTree(v, k);
+  else if (base.cs === TOOL_CARD && base.w !== v.w) {
+    // A widened tool card keeps its own layout (logo pinned right, wider text) in every state.
+    const b = base.c || [];
+    v = { ...v, w: base.w, h: base.h, c: v.c?.map((k, i) => (b[i]?.n === k.n ? { ...k, m: b[i].m, w: b[i].w, h: b[i].h } : k)) };
+  }
   return { ...withOverrides(base, v), i: base.i, m: base.m, ix: v.ix };
 }
 

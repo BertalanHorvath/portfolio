@@ -74,9 +74,8 @@ Semantic wrappers, chosen by Figma component set, that render the Figma layers i
   not drawn, as they would frame the window.
 - **Digital Citizenship hero mockup** (desktop) sits 38 px lower than in Figma and above the hero's border: its top reached
   under the fixed project bar, which cut it off, and the hero's border crossed it (`ADJUSTMENTS` in `src/app/Page.tsx`).
-- **Problem Register subtitle** "for state institutions" is 30 px on mobile (36 px with a 68 px line height in the design,
-  which broke it into two lines far apart; at 30 px it fits on one line and the page below closes up by 102 px) and 36 px
-  on tablet (46 px in the design), matching desktop.
+- **Tool cards wider than their component** (tablet 355 px, mobile 358 px, component 330 px) keep the logo at their right
+  edge, at rest and on hover; in the design the logo stayed where it was in the narrower component.
 - **Entry animations play once** per visit: window resizes (a mobile browser's toolbar showing and hiding while scrolling)
   do not restart them.
 - **Home status tag** reads "Open to new roles" (all breakpoints); its pill shrinks with the text.

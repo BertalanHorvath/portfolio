@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { HooksContext, Node, type VideoSource } from '../figma/Node';
 import { loadScreen, scene } from '../figma/scene';
 import { assetUrls, preloadImages } from '../figma/paint';
+import { pinRight, TOOL_CARD } from '../figma/Interactive';
 import { useAnimatedTree } from '../figma/useAnimatedTree';
 import type { Breakpoint, FNode, Paint, Transition } from '../figma/types';
 import { renderSpecial } from './special';
@@ -78,9 +79,7 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
  * - the Digital Citizenship hero mockup reaches above the hero, under the fixed project bar, which
  *   cut its top off. It moves down part of the way (the bar is also clear at the top of the page,
  *   see FrostedBar) and is drawn above the hero's border, which would otherwise cross it.
- * - the Problem Register subtitle "for state institutions" is 30 px on mobile, where it then fits on
- *   one line (34 px line height), so the 102 px its second 68 px line took is closed up below it;
- *   and 36 px on tablet, as on desktop.
+ * - tool cards wider than their component (tablet, mobile) keep the logo at their right edge.
  */
 interface Adjustment {
   /** '*': every breakpoint / route */
@@ -193,22 +192,15 @@ const ADJUSTMENTS: Adjustment[] = [
     match: (n) => n.n === 'Group 1171275454',
     patch: (n) => ({ ...n, zt: 1, m: [n.m[0], n.m[1], n.m[2], n.m[3], n.m[4], n.m[5] + 38] }),
   },
-  {
-    bp: 'mobile', route: 'projects/problem-register',
-    match: (n) => n.t === 'TEXT' && n.tx === 'for state institutions',
-    patch: (n) => ({ ...n, h: 34, ts: { ...n.ts, fs: 30, lh: 34 } }),
-  },
-  // the subtitle below it starts at 453 (title-block 216 + 237); "for state institutions" now ends at 339
-  { bp: 'mobile', route: 'projects/problem-register', collapse: { y: 453, dy: 102 } },
   // Mobile figures whose picture starts above its clipping frame (top cut off): the picture moves
   // down into the frame, the frame grows by what it needs and the page below moves down with it.
   ...figureFix('projects/eletesemeny', (v) => v.c?.[0]?.n === 'Rectangle' && near(v.c[0].m[5], -133.6), 14, 6),
   ...figureFix('projects/eletesemeny', (v) => !!v.c?.[0]?.n.startsWith('FIG 2 image') && near(v.c[0].m[5], -16.6), 16.6, 17),
   ...figureFix('projects/forecastify', (v) => v.c?.[0]?.n === 'image-slot' && near(v.c[0].m[5], -11.2), 11.2, 17),
   {
-    bp: 'tablet', route: 'projects/problem-register',
-    match: (n) => n.t === 'TEXT' && n.tx === 'for state institutions',
-    patch: (n) => ({ ...n, ts: { ...n.ts, fs: 36 } }),
+    bp: '*', route: 'creative-suite',
+    match: (n) => n.cs === TOOL_CARD && !!n.cid && !!scene.variants[n.cid] && n.w !== scene.variants[n.cid].w,
+    patch: (n) => pinRight(n, scene.variants[n.cid!]),
   },
 ];
 
