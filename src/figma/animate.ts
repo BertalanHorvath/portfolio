@@ -198,6 +198,26 @@ export function sameNode(a: FNode, b: FNode): boolean {
 
 const opacityOf = (n: FNode) => (n.hid ? 0 : n.o ?? 1);
 
+const NUM = /-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?/gi;
+/**
+ * Vector geometry between two states (a line growing, an arrow shortening): when both paths have
+ * the same commands, their coordinates interpolate, as Figma's smart animate morphs them;
+ * otherwise the target's geometry is used.
+ */
+function lerpGeometry(a: FNode['fg'], b: FNode['fg'], p: number): FNode['fg'] {
+  if (!a || !b || a.length !== b.length) return b;
+  const out: NonNullable<FNode['fg']> = [];
+  for (let i = 0; i < b.length; i++) {
+    const [da, ea] = a[i], [db, eb] = b[i];
+    if (da === db) { out.push(b[i]); continue; }
+    const na = da.match(NUM) || [], nb = db.match(NUM) || [];
+    if (ea !== eb || na.length !== nb.length || da.replace(NUM, '#') !== db.replace(NUM, '#')) return b;
+    let k = 0;
+    out.push([db.replace(NUM, () => { const v = lerp(+na[k], +nb[k], p); k++; return String(Math.round(v * 1000) / 1000); }), eb]);
+  }
+  return out;
+}
+
 /**
  * Smart-animate frame between two matched layers at eased progress p. Matching layers interpolate
  * position, rotation, size, opacity, fills, strokes, radii, effects and text styles; layers that
@@ -218,6 +238,8 @@ export function interpolate(a: FNode, b: FNode, p: number): FNode {
     fx: lerpEffects(a.fx, b.fx, p),
     ts: lerpStyle(a.ts, b.ts, p),
   };
+  if (a.fg !== b.fg) out.fg = lerpGeometry(a.fg, b.fg, p);
+  if (a.sg !== b.sg) out.sg = lerpGeometry(a.sg, b.sg, p);
   if (typeof a.rr === 'number' && typeof b.rr === 'number') out.rr = lerp(a.rr, b.rr, p);
   if (b.ost && a.ost) {
     out.ost = Object.fromEntries(Object.entries(b.ost).map(([k, v]) => [k, lerpStyle(a.ost![k], v, p)!]));
