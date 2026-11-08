@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Page } from './Page';
-import { breakpointFor, currentRoute, takeTransition, titleOf } from './routes';
+import { breakpointFor, currentRoute, navigate, ROUTE_EVENT, routeOfPath, takeTransition, titleOf, upgradeHashRoute } from './routes';
 import { loadRoute, prefetchBreakpoint } from '../figma/scene';
 import type { Transition } from '../figma/types';
 
@@ -82,8 +82,27 @@ export function App() {
       setFade(dissolve ? tr : undefined);
       if (dissolve) window.setTimeout(() => setPages((cur) => cur.filter((p) => p.leaving === undefined)), tr!.dur * 1000);
     };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    // Old hash links still work: they turn into the path and navigate.
+    const onHashLink = () => { if (upgradeHashRoute()) onHash(); };
+    // Same-site links (sidebar, project links, the 404 page) navigate without a reload.
+    const onLinkClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!a || a.target || a.hasAttribute('download') || a.origin !== window.location.origin) return;
+      if (/\.[a-z0-9]+$/i.test(a.pathname) && !a.pathname.endsWith('.html')) return; // files
+      e.preventDefault();
+      navigate(routeOfPath(a.pathname));
+    };
+    window.addEventListener(ROUTE_EVENT, onHash);
+    window.addEventListener('popstate', onHash);
+    window.addEventListener('hashchange', onHashLink);
+    document.addEventListener('click', onLinkClick);
+    return () => {
+      window.removeEventListener(ROUTE_EVENT, onHash);
+      window.removeEventListener('popstate', onHash);
+      window.removeEventListener('hashchange', onHashLink);
+      document.removeEventListener('click', onLinkClick);
+    };
   }, []);
 
   const route = pages[pages.length - 1].route;

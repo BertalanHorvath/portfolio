@@ -744,9 +744,13 @@ async function main() {
   // its page opens. The bundled index keeps everything else.
   fs.rmSync(OUT_SCREENS, { recursive: true, force: true });
   fs.mkdirSync(OUT_SCREENS, { recursive: true });
+  // The page title of a case study: the name its project bar shows ("current-title").
+  const titleIn = (n) => (n.t === 'TEXT' && n.n === 'current-title' ? n.tx : (n.c || []).map(titleIn).find(Boolean));
   for (const [id, n] of Object.entries(scene.screens)) {
     fs.writeFileSync(path.join(OUT_SCREENS, `${fileName(id)}.json`), JSON.stringify(n));
     scene.meta[id].file = `figma/s/${fileName(id)}.json`;
+    const title = titleIn(n);
+    if (title) scene.meta[id].title = title.trim();
   }
   delete scene.screens;
   fs.mkdirSync(path.dirname(OUT_SCENE), { recursive: true });

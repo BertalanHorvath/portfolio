@@ -383,7 +383,7 @@ function NotFound() {
   return (
     <main className="page-missing">
       <p>This page does not exist.</p>
-      <a href="#/">Go to the home page</a>
+      <a href="/">Go to the home page</a>
     </main>
   );
 }

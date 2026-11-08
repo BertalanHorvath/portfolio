@@ -129,6 +129,8 @@ export interface ScreenMeta {
   /** route key: '' (home), 'creative-suite', 'professional-interests', 'projects/<slug>' */
   route: string;
   name: string;
+  /** case studies: the name shown in the project bar */
+  title?: string;
   w: number;
   h: number;
   file: string;

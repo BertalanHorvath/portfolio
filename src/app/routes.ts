@@ -3,8 +3,9 @@ import type { Breakpoint, Transition } from '../figma/types';
 
 /**
  * Routes come from the Figma screen names (see routeKey in scripts/figma/sync.mjs):
- * '' home, 'creative-suite', 'professional-interests', 'projects/<slug>'. Hash routing, so the
- * site works on any static host.
+ * '' home, 'creative-suite', 'professional-interests', 'projects/<slug>'. They are real paths
+ * (/projects/leier): the build prerenders an HTML file for each (scripts/prerender.mjs), so every
+ * page has its own readable document. Old hash links (#/projects/leier) are redirected.
  */
 
 export const EMAIL = 'horvath.bertalan.andras@gmail.com';
@@ -12,9 +13,24 @@ export const EMAIL = 'horvath.bertalan.andras@gmail.com';
 /** Breakpoints: below 600 px the mobile design, below 1200 px the tablet one, else desktop. */
 export const breakpointFor = (width: number): Breakpoint => (width < 600 ? 'mobile' : width < 1200 ? 'tablet' : 'desktop');
 
-export const currentRoute = () => decodeURI(window.location.hash.replace(/^#\/?/, '')).replace(/\/$/, '');
+/** The route of a path: '/projects/leier/' or '/projects/leier.html' → 'projects/leier'. */
+export const routeOfPath = (path: string) =>
+  decodeURI(path).replace(/^\/+/, '').replace(/(?:\/index)?\.html$/, '').replace(/\/+$/, '');
 
-export const href = (route: string) => `#/${route}`;
+export const currentRoute = () => routeOfPath(window.location.pathname);
+
+export const href = (route: string) => `/${route}`;
+
+/** An old hash link (#/projects/leier) becomes its path, without a reload. */
+export function upgradeHashRoute() {
+  const m = /^#\/(.*)$/.exec(window.location.hash);
+  if (!m) return false;
+  window.history.replaceState(null, '', href(routeOfPath(m[1])));
+  return true;
+}
+
+/** Fired on the window when the app itself changes the route (pushState sends no event). */
+export const ROUTE_EVENT = 'routechange';
 
 /** Route of a Figma screen id (navigation destinations point at screens of one breakpoint). */
 export const routeOfScreen = (id: string | undefined) => (id && scene.meta[id] ? scene.meta[id].route : undefined);
@@ -34,7 +50,7 @@ export const allRoutes = () => [...new Set(Object.values(scene.meta).map((m) => 
 export const titleOf = (route: string) => {
   if (route === '') return 'Bertalan Horvath — Portfolio';
   const m = Object.values(scene.meta).find((x) => x.route === route && x.bp === 'desktop');
-  const name = m?.name.replace(/^case-\d+\s+/, '').replace(/^cs$/, 'Creative Suite').replace(/^pi$/, 'Professional interests');
+  const name = m?.title ?? m?.name.replace(/^case-\d+\s+/, '').replace(/^cs$/, 'Creative Suite').replace(/^pi$/, 'Professional interests');
   return `${name ?? route} — Bertalan Horvath`;
 };
 
@@ -45,10 +61,13 @@ export const MENU_TARGETS = ['', 'projects/eletesemeny', 'creative-suite', 'prof
 
 let pendingTransition: Transition | undefined;
 export function navigate(route: string, tr?: Transition) {
+  if (route === currentRoute()) {
+    window.scrollTo({ top: 0 });
+    return;
+  }
   pendingTransition = tr;
-  const next = href(route);
-  if (window.location.hash === next) window.scrollTo({ top: 0 });
-  else window.location.hash = next;
+  window.history.pushState(null, '', href(route));
+  window.dispatchEvent(new Event(ROUTE_EVENT));
 }
 export function takeTransition() {
   const t = pendingTransition;
