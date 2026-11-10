@@ -197,8 +197,15 @@ function render(route, root) {
   const contents = rows ? `<nav aria-label="Contents"><h2>Contents</h2><ol>${rows.map((r) => `<li>${esc(r)}</li>`).join('')}</ol></nav>` : '';
   const at = html.findIndex((x) => x.startsWith('<h2'));
   if (contents) html.splice(at < 0 ? html.length : at, 0, contents);
-  const description = bs.find((b) => b.fs < 26 && !b.mono && b.text.length >= 60)?.text ?? '';
-  return { body: html.join('\n'), description };
+  // description: a case study's intro paragraph; elsewhere the first paragraph (the line under the title)
+  const prose = (b, n) => b.fs < 26 && !b.mono && b.fw < 600 && b.text.length >= n;
+  const first = bs.find((b) => prose(b, 40))?.text;
+  const description = (route.startsWith('projects/') ? bs.find((b) => prose(b, 120))?.text : undefined) ?? first ?? '';
+  // case-study hero: "CASE STUDY 01 / PUBLIC SECTOR RESEARCH + DESIGN" and the line under the title
+  const eyebrow = bs.find((b) => /^case study\b/i.test(b.text))?.text;
+  const at1 = bs.findIndex((b) => b.fs >= 40);
+  const subtitle = at1 >= 0 && bs[at1 + 1] && bs[at1 + 1].fs < 26 && !bs[at1 + 1].mono ? bs[at1 + 1].text : undefined;
+  return { body: html.join('\n'), description, eyebrow, subtitle };
 }
 
 const SITE_NAV = `<nav aria-label="Main"><ul>${[['', 'Home'], ['projects/eletesemeny', 'Projects'], ['creative-suite', 'Creative Suite'], ['professional-interests', 'Professional interests']]
@@ -237,21 +244,86 @@ function head(route, description) {
   ].join('\n    ');
 }
 
+// ---- structured data (schema.org JSON-LD) ---------------------------------------------------
+
+/**
+ * Facts about the author, all from the site's own copy (home page: role, expertise, companies,
+ * education, languages; contact block). Add more here (e.g. a LinkedIn URL in sameAs, a city in
+ * address) and they appear on every page.
+ */
+const PERSON = {
+  '@type': 'Person',
+  '@id': `${SITE}/#person`,
+  name: NAME,
+  jobTitle: 'Product Designer',
+  description: 'Product Designer with 8+ years across e-commerce, enterprise software, data-rich dashboards and public-sector services.',
+  url: `${SITE}/`,
+  image: `${SITE}${OG_IMAGE}`,
+  email: 'mailto:horvath.bertalan.andras@gmail.com',
+  telephone: '+36 30 311 8560',
+  knowsAbout: ['UX/UI design', 'Prototyping', 'User research', 'UX audits', 'Usability testing', 'Service design',
+    'Product design', 'E-commerce', 'Enterprise software', 'Data-rich dashboards', 'Public-sector services'],
+  knowsLanguage: ['English', 'German', 'Hungarian'],
+  worksFor: { '@type': 'Organization', name: '22 Design' },
+  alumniOf: { '@type': 'CollegeOrUniversity', name: 'Budapest University of Technology and Economics (BME)' },
+  hasOccupation: { '@type': 'Occupation', name: 'Product Designer', skills: 'UX/UI design, prototyping, research, UX audits, usability testing, service design' },
+  sameAs: [],
+};
+const WEBSITE = { '@type': 'WebSite', '@id': `${SITE}/#website`, url: `${SITE}/`, name: `${NAME} — Portfolio`, inLanguage: 'en', author: { '@id': PERSON['@id'] } };
+
+const titleCase = (s) => s.toLowerCase().replace(/(^|[\s/+&-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+
+function structuredData(route, info) {
+  const url = urlOf(route);
+  const page = { '@id': `${url}#webpage`, url, name: titleOfRoute(route), description: truncate(info.desc, 300), isPartOf: { '@id': WEBSITE['@id'] }, inLanguage: 'en' };
+  const graph = [PERSON.sameAs.length ? PERSON : { ...PERSON, sameAs: undefined }, WEBSITE];
+  if (route === '') {
+    graph.push({ '@type': 'ProfilePage', ...page, mainEntity: { '@id': PERSON['@id'] }, about: { '@id': PERSON['@id'] } });
+  } else if (route.startsWith('projects/')) {
+    const field = info.eyebrow?.split('/').slice(1).join('/').trim();
+    const work = {
+      '@type': 'CreativeWork',
+      '@id': `${url}#case-study`,
+      name: caseTitle(route),
+      headline: info.subtitle ? `${caseTitle(route)}: ${info.subtitle}` : caseTitle(route),
+      description: truncate(info.desc, 300),
+      genre: 'UX case study',
+      ...(field ? { about: titleCase(field) } : {}),
+      url,
+      image: `${SITE}${OG_IMAGE}`,
+      inLanguage: 'en',
+      author: { '@id': PERSON['@id'] },
+      creator: { '@id': PERSON['@id'] },
+      isPartOf: { '@id': WEBSITE['@id'] },
+    };
+    graph.push({ '@type': 'WebPage', ...page, mainEntity: { '@id': work['@id'] } }, work);
+  } else {
+    graph.push({ '@type': 'WebPage', ...page, author: { '@id': PERSON['@id'] } });
+  }
+  const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(/</g, '\\u003c');
+  return `<script type="application/ld+json">${json}</script>`;
+}
+
 // ---- write ----------------------------------------------------------------------------------
 
 const SEO = /<!--seo:start-->[\s\S]*?<!--seo:end-->/;
+const LD = /<!--ld:start-->[\s\S]*?<!--ld:end-->/;
+if (!LD.test(template)) throw new Error('index.html has no <!--ld:start--> … <!--ld:end--> block');
 if (!SEO.test(template)) throw new Error('index.html has no <!--seo:start--> … <!--seo:end--> block');
 // The root, empty or holding an earlier run's prerendered content (the script can run again).
 const ROOT_DIV = /<div id="root">(?:<!--prerender:start-->[\s\S]*?<!--prerender:end-->)?<\/div>/;
 if (!ROOT_DIV.test(template)) throw new Error('index.html has no <div id="root"></div>');
 
 const fileOf = (route) => (route === '' ? 'index.html' : `${route}.html`); // Pages serves /a/b from a/b.html
+const pages = [];
 for (const route of routes) {
-  const { body, description } = render(route, endScreen(route));
+  const { body, description, eyebrow, subtitle } = render(route, endScreen(route));
   const desc = route === '' ? description : description || `${caseTitle(route) ?? titleOfRoute(route)} — a case study by ${NAME}, product designer.`;
+  pages.push({ route, desc, eyebrow, subtitle });
   const content = `<div class="prerender">\n${SITE_NAV}\n<main>\n${body}\n</main>\n${route.startsWith('projects/') || route === '' ? PROJECTS_NAV : ''}\n${CONTACT}\n</div>`;
   const html = template
     .replace(SEO, () => `<!--seo:start-->\n    ${head(route, desc)}\n    <!--seo:end-->`)
+    .replace(LD, () => `<!--ld:start-->\n    ${structuredData(route, { desc, eyebrow, subtitle })}\n    <!--ld:end-->`)
     .replace(ROOT_DIV, () => `<div id="root"><!--prerender:start-->${content}<!--prerender:end--></div>`);
   const file = path.join(DIST, fileOf(route));
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -266,3 +338,25 @@ ${routes.map((r) => `  <url><loc>${esc(urlOf(r))}</loc><lastmod>${today}</lastmo
 </urlset>
 `);
 console.log(`wrote dist/sitemap.xml (${routes.length} URLs)`);
+
+// llms.txt (llmstxt.org): a plain summary of the site and its pages for AI assistants and search.
+const line = (p) => `- [${p.route === '' ? 'Home' : (caseTitle(p.route) ?? titleOfRoute(p.route).split(' — ')[0])}](${urlOf(p.route)}): ${truncate(p.desc, 220)}`;
+fs.writeFileSync(path.join(DIST, 'llms.txt'), `# ${NAME} — Product Designer
+
+> ${PERSON.description} Portfolio of case studies in UX/UI design, research and service design.
+
+- Role: Product Designer (UX/UI design, prototyping, research, UX audits, usability testing, service design)
+- Companies: 22 Design (2020 – present), Idomsoft (2026), Apptum (2018 – 2020)
+- Education: Industrial Design Engineering, Budapest University of Technology and Economics (BME), 2010 – 2016
+- Languages: English (C1), German (B1), Hungarian (native)
+- Contact: horvath.bertalan.andras@gmail.com, +36 30 311 8560
+
+## Case studies
+
+${pages.filter((p) => p.route.startsWith('projects/')).map(line).join('\n')}
+
+## Other pages
+
+${pages.filter((p) => !p.route.startsWith('projects/')).map(line).join('\n')}
+`);
+console.log('wrote dist/llms.txt');

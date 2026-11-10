@@ -1,4 +1,7 @@
+# Search engines and AI assistants may read this site and quote it in their answers
+# (Content Signals: https://contentsignals.org).
 User-agent: *
+Content-Signal: search=yes, ai-input=yes
 Allow: /
 
 Sitemap: https://bertalanhorvath.com/sitemap.xml

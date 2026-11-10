@@ -66,8 +66,10 @@ from `projects/leier.html`) containing
 
 The prerendered text sits in `#root`, visually hidden (it is for crawlers and screen readers); the app replaces it when
 it starts, so the design is unchanged. `index.html` also has a `<noscript>` block (name, role, case studies, contact)
-that, without JavaScript, shows together with the text version of the page. The script also writes `dist/sitemap.xml`;
-`public/robots.txt` points to it. The site URL defaults to `https://bertalanhorvath.com` (`SITE_URL` overrides it).
+that, without JavaScript, shows together with the text version of the page. The script also writes `dist/sitemap.xml` and `dist/llms.txt` (a plain summary of the site and its pages for AI
+assistants), and a schema.org JSON-LD graph on every page (Person, WebSite, ProfilePage on the home page, a CreativeWork
+for each case study; the author facts are in `PERSON` in the script). `public/robots.txt` points to the sitemap and
+allows search and AI answers (`Content-Signal: search=yes, ai-input=yes`; training is left unspecified). The site URL defaults to `https://bertalanhorvath.com` (`SITE_URL` overrides it).
 
 ## Components (`src/components`)
 
