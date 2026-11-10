@@ -267,7 +267,7 @@ const PERSON = {
   worksFor: { '@type': 'Organization', name: '22 Design' },
   alumniOf: { '@type': 'CollegeOrUniversity', name: 'Budapest University of Technology and Economics (BME)' },
   hasOccupation: { '@type': 'Occupation', name: 'Product Designer', skills: 'UX/UI design, prototyping, research, UX audits, usability testing, service design' },
-  sameAs: [],
+  sameAs: ['https://www.linkedin.com/in/bertalan-horvath/'],
 };
 const WEBSITE = { '@type': 'WebSite', '@id': `${SITE}/#website`, url: `${SITE}/`, name: `${NAME} — Portfolio`, inLanguage: 'en', author: { '@id': PERSON['@id'] } };
 
@@ -350,6 +350,7 @@ fs.writeFileSync(path.join(DIST, 'llms.txt'), `# ${NAME} — Product Designer
 - Education: Industrial Design Engineering, Budapest University of Technology and Economics (BME), 2010 – 2016
 - Languages: English (C1), German (B1), Hungarian (native)
 - Contact: horvath.bertalan.andras@gmail.com, +36 30 311 8560
+- LinkedIn: https://www.linkedin.com/in/bertalan-horvath/
 
 ## Case studies
 
