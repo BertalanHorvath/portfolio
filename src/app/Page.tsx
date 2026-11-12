@@ -73,7 +73,7 @@ function widen(n: FNode, w0: number, w: number, side: number): FNode {
 
 /**
  * Corrections to the design, applied to every state of a route (documented in the README):
- * - the home status tag reads "Open to new roles".
+ * - the home status tag reads "Open to new roles"; the hero's role line "Senior Product Designer …".
  * - the desktop "Explore projects" button opens the first case study (no destination in the design).
  * - primary buttons ("Explore projects", the case-study bar's "next" pill) are brand-coloured with
  *   white text at rest and white with dark text on hover; the bar's pills draw chevrons.
@@ -198,7 +198,19 @@ const withClick = (bp: Breakpoint) => (n: FNode): FNode => {
   return to ? { ...n, ix: [...(n.ix || []), { on: 'ON_CLICK', do: 'NAVIGATE', to, tr: DISSOLVE }] } : n;
 };
 
+/** The home hero's role line reads "Senior Product Designer …" (all breakpoints). */
+const ROLE = 'Product Designer with';
+const SENIOR = 'Senior ';
+const isRoleLine = (n: FNode) => n.t === 'TEXT' && !!n.tx?.startsWith(ROLE);
+const senior = (n: FNode): FNode => ({
+  ...n,
+  tx: SENIOR + n.tx,
+  // style runs are character ranges: they move with the text, the first one takes in the new word
+  runs: n.runs?.map(([a, b, k], i) => [i === 0 ? a : a + SENIOR.length, b + SENIOR.length, k] as [number, number, number]),
+});
+
 const ADJUSTMENTS: Adjustment[] = [
+  { bp: '*', route: '', match: isRoleLine, patch: senior },
   ...(['desktop', 'tablet', 'mobile'] as const).map((bp): Adjustment => ({
     bp, route: '*', match: (n) => n.cid === PRIMARY_REST, patch: (n) => primaryRest(withClick(bp)(n)),
   })),

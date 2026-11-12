@@ -142,7 +142,8 @@ function blocks(root) {
     if (n !== root && ((n.t !== 'TEXT' && PICTURE.test(n.n)) || isSkewed(n) || n.r)) return;
     const here = linkOf(n) ?? link;
     if (n.t === 'TEXT') {
-      const text = clean(TEXT_FIXES[clean(n.tx)] ?? n.tx);
+      const raw = clean(TEXT_FIXES[clean(n.tx)] ?? n.tx);
+      const text = raw.startsWith('Product Designer with') ? `Senior ${raw}` : raw; // the home hero's role line (as in the app)
       if (!text || (n.ts?.fs ?? 0) < 10 || ((n.ts?.fs ?? 0) < 26 && noise(text))) return; // big numbers are figures (8+, 06)
       out.push({ text, fs: n.ts?.fs ?? 14, fw: n.ts?.fw ?? 400, mono: /mono/i.test(n.ts?.ff ?? ''), link: here });
       return;
